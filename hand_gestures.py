@@ -3,6 +3,7 @@ import mediapipe as mp
 import time
 
 from camera_utils import open_first_available
+from gesture_logic import count_fingers
 
 # --- Configurações e Constantes ---
 LARGURA_CAM, ALTURA_CAM = 640, 480  # Resolução da captura
@@ -76,7 +77,10 @@ def main():
                 )
 
                 # Contar dedos
-                total_dedos, lista_dedos = contar_dedos(hand_landmarks, hand_handedness)
+                total_dedos, lista_dedos = count_fingers(
+                    hand_landmarks.landmark,
+                    hand_handedness.classification[0].label,
+                )
                 
                 # Exibir contagem na tela
                 # Posição do texto baseada na detecção do punho (landmark 0)
@@ -86,8 +90,8 @@ def main():
                 cv2.putText(frame, f'Dedos: {total_dedos}', (cx - 50, cy + 50), 
                             cv2.FONT_HERSHEY_SIMPLEX, 1, COR_TEXTO, 2)
                 
-                # Opcional: Mostrar status de cada dedo no console para debug
-                # print(f"Mão: {hand_handedness.classification[0].label}, Dedos: {lista_dedos}")
+# Opcional: Mostrar status de cada dedo no console para debug
+# print(f\"Mão: {hand_handedness.classification[0].label}, Dedos: {lista_dedos}\")
 
         # Calcular e exibir FPS
         # (Opcional, mas útil para performance)
@@ -103,97 +107,6 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
     hands.close()
-
-def contar_dedos(hand_landmarks, hand_handedness):
-    """
-    Conta quantos dedos estão levantados baseado nos landmarks.
-    Retorna o total e uma lista de estados (1=levantado, 0=abaixado).
-    """
-    
-    # IDs das pontas dos dedos (Tips)
-    # Polegar: 4, Indicador: 8, Médio: 12, Anular: 16, Mínimo: 20
-    finger_tips = [4, 8, 12, 16, 20]
-    
-    # Lista para armazenar estado de cada dedo (0 ou 1)
-    fingers_status = []
-    
-    # Lógica para os 4 dedos (Indicador, Médio, Anular, Mínimo)
-    # Compara a ponta (TIP) com a segunda articulação (PIP - Proximal Interphalangeal)
-    # Como Y cresce para baixo na imagem, TIP < PIP significa dedo levantado.
-    
-    # Dedo Indicador (8) vs PIP (6)
-    if hand_landmarks.landmark[8].y < hand_landmarks.landmark[6].y:
-        fingers_status.append(1)
-    else:
-        fingers_status.append(0)
-        
-    # Dedo Médio (12) vs PIP (10)
-    if hand_landmarks.landmark[12].y < hand_landmarks.landmark[10].y:
-        fingers_status.append(1)
-    else:
-        fingers_status.append(0)
-
-    # Dedo Anular (16) vs PIP (14)
-    if hand_landmarks.landmark[16].y < hand_landmarks.landmark[14].y:
-        fingers_status.append(1)
-    else:
-        fingers_status.append(0)
-
-    # Dedo Mínimo (20) vs PIP (18)
-    if hand_landmarks.landmark[20].y < hand_landmarks.landmark[18].y:
-        fingers_status.append(1)
-    else:
-        fingers_status.append(0)
-
-    # Lógica Especial para o Polegar
-    # O polegar se move lateralmente. Comparar X da ponta (4) com X da articulação MCP (2) ou IP (3).
-    # Precisamos saber se é mão esquerda ou direita para saber a direção "aberta".
-    # Nota: Como espelhamos a imagem (flip), a "Right" do MediaPipe parecerá Esquerda na tela e vice-versa,
-    # mas a label interna `hand_handedness.classification[0].label` se refere à mão real do usuário (se não espelhado) 
-    # ou à mão detectada na imagem RGB.
-    
-    # Label "Right" = Mão Direita do usuário. Na imagem espelhada, o polegar abre para a Esquerda da tela (X menor).
-    # Label "Left" = Mão Esquerda do usuário. Na imagem espelhada, o polegar abre para a Direita da tela (X maior).
-    
-    label = hand_handedness.classification[0].label  # "Left" ou "Right"
-    
-    # Coordenadas X do polegar
-    thumb_tip_x = hand_landmarks.landmark[4].x
-    thumb_ip_x = hand_landmarks.landmark[3].x # Usando articulação IP para referência
-    
-    thumb_is_open = False
-    
-    # ATENÇÃO: Devido ao `cv2.flip(frame, 1)` feito antes do processamento, a imagem enviada ao MediaPipe está espelhada.
-    # Isso pode inverter a detecção de Left/Right dependendo da versão, mas geralmente:
-    # Se eu levanto minha mão DIREITA na webcam espelhada -> Ela aparece no lado direito da tela (como se fosse um espelho).
-    # O MediaPipe analisando a imagem espelhada pode classificar como "Left" (porque parece uma mão esquerda visualmente?).
-    # Vamos simplificar: testar a posição relativa ao centro da mão ou apenas X relativo.
-    
-    # Lógica agnóstica simplificada (funciona bem para "High Five"):
-    # Se a mão é "Right" (pelo MediaPipe), o polegar abre para a esquerda da imagem (X menor) se não estiver espelhado.
-    # Mas como ESPELHAMOS a imagem ANTES:
-    # Se usuário levanta mão DIREITA -> Imagem mostra mão à direita. O polegar aponta para a ESQUERDA (centro do corpo).
-    # Vamos usar a regra: Polegar está "fora" se estiver mais longe do centro da palma do que a base.
-    # Mas a regra de X simples funciona bem:
-    
-    if label == "Right":
-        # Mão Direita: Polegar aberto se Tip.x < IP.x (mais à esquerda na imagem) 
-        # *Correção*: Se usarmos flip, a lógica inverte? Vamos assumir comportamento padrão:
-        # Se Tip.x < IP.x, polegar está aberto para a esquerda.
-        if thumb_tip_x < thumb_ip_x:
-            thumb_is_open = True
-    else: # Left
-        # Mão Esquerda: Polegar aberto se Tip.x > IP.x (mais à direita na imagem)
-        if thumb_tip_x > thumb_ip_x:
-            thumb_is_open = True
-            
-    # Inserir o estado do polegar no INÍCIO da lista (para ficar [Polegar, Ind, Med, Anu, Min])
-    if thumb_is_open:
-        fingers_status.insert(0, 1)
-    else:
-        fingers_status.insert(0, 0)
-        
-    return fingers_status.count(1), fingers_status
 
 if __name__ == "__main__":
     main()
