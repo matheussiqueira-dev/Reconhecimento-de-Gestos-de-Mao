@@ -2,6 +2,14 @@
 
 Este projeto implementa um sistema de visão computacional em tempo real para detectar mãos e contar dedos usando a webcam do computador. Desenvolvido com Python, OpenCV e MediaPipe.
 
+##  Novidades
+
+- **Seleção automática da Logitech Brio 305** por nome (mais confiável).
+- **HUD modernizado** com FPS, status da câmera e cards por mão.
+- **Reconhecimento de gestos** (Soco, Paz, Rock, OK, Pinch, etc.).
+- **Suavização temporal** para reduzir flicker.
+- **Atalhos em tempo real** para alternar HUD/landmarks.
+
 ##  Pré-requisitos e Instalação
 
 ### Requisitos de Sistema
@@ -16,6 +24,12 @@ Abra o terminal na pasta do projeto e execute:
 pip install opencv-python mediapipe
 ```
 
+Para **seleção por nome da câmera** (ex: Brio 305), instale também:
+
+```bash
+pip install pygrabber
+```
+
 *(Nota: O `mediapipe` já inclui as dependências necessárias para processamento de ML, e o `opencv-python` lida com a parte de vídeo)*
 
 ##  Como Rodar
@@ -28,8 +42,34 @@ python hand_gestures.py
 ```
 
 3. Uma janela abrirá mostrando o vídeo da sua webcam.
-4. **Levante a mão** para ver o esqueleto (landmarks) desenhado e a contagem de dedos.
+4. **Levante a mão** para ver os landmarks desenhados, contagem e gesto reconhecido.
 5. Pressione a tecla **'q'** com a janela do vídeo selecionada para fechar o programa.
+
+### Dicas rápidas
+
+- **L**: alterna landmarks
+- **H**: alterna HUD
+- **Q**: sair
+
+### Exemplos de uso
+
+Forçar resolução:
+
+```bash
+python hand_gestures.py --width 1280 --height 720
+```
+
+Listar câmeras disponíveis:
+
+```bash
+python hand_gestures.py --list-cameras
+```
+
+Usar fallback se a Brio 305 não for encontrada:
+
+```bash
+python hand_gestures.py --allow-fallback
+```
 
 ##  Como Funciona (Lógica do Código)
 
@@ -45,6 +85,9 @@ O sistema segue este fluxo:
         - Se `Y_ponta < Y_articulação`, o dedo está **levantado**.
     - **Polegar**: O polegar se move lateralmente. Verificamos a posição horizontal (eixo X) da ponta em relação à articulação base.
         - Dependendo se a mão é esquerda ou direita, verificamos se o polegar está "para fora" da palma.
+5.  **Gestos e Pinch**:
+    - Com base no vetor de dedos e na distância entre polegar e indicador, inferimos gestos como **Paz**, **OK**, **Pinch**, etc.
+    - Uma janela de suavização reduz oscilações rápidas.
 
 ## 🛠️ Possíveis Melhorias Futuras
 
