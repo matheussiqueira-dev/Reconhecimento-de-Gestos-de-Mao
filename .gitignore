@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Node / Next.js
+web_app/.next/
+web_app/node_modules/
+web_app/out/
+web_app/.vercel/
+web_app_dev.log
+
+# Environment
+.env*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
