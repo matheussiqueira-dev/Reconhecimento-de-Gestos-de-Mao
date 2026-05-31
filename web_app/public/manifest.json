@@ -1,0 +1,17 @@
+{
+  "name": "Hand Gesture Recognition Dashboard",
+  "short_name": "Gesture Dash",
+  "description": "Dashboard de reconhecimento de gestos de mao com webcam local.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8fb",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

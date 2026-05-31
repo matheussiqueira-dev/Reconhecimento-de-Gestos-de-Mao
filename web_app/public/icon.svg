@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Hand gesture dashboard icon">
+  <rect width="128" height="128" rx="24" fill="#0f766e"/>
+  <path d="M35 73c0-6 8-6 8 0V45c0-6 9-6 9 0v23-35c0-6 10-6 10 0v35-31c0-6 9-6 9 0v34-22c0-6 9-6 9 0v32c0 19-11 31-27 31-13 0-22-6-29-18l-8-14c-3-5 4-10 8-5l11 13V73z" fill="#ffffff"/>
+  <circle cx="93" cy="35" r="11" fill="#f59e0b"/>
+</svg>
