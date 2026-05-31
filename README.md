@@ -1,64 +1,133 @@
-# Sistema de Reconhecimento de Gestos de Mão
+# Hand Gesture Recognition Dashboard
 
-Este projeto implementa um sistema de visão computacional em tempo real para detectar mãos e contar dedos usando a webcam do computador. Desenvolvido com Python, OpenCV e MediaPipe.
+Dashboard de reconhecimento de gestos de mao desenvolvido por Matheus Siqueira. O projeto combina uma versao Python local com OpenCV e MediaPipe e uma versao web em Next.js preparada para deploy na Vercel.
 
-##  Pré-requisitos e Instalação
+## Visao geral
 
-### Requisitos de Sistema
-- Python 3.7 ou superior instalado.
-- Webcam funcional.
+A aplicacao detecta maos, extrai landmarks, conta dedos levantados e apresenta gestos comuns como palma aberta, punho fechado, joinha, paz e apontando. A versao web adiciona landing page, demo com webcam, dashboard de metricas, PWA basico, SEO tecnico e documentacao de privacidade.
 
-### Instalação das Dependências
+## Funcionalidades
 
-Abra o terminal na pasta do projeto e execute:
+- Reconhecimento local com Python, OpenCV e MediaPipe.
+- Arquitetura Python modular em `python_app/`.
+- Demo web com webcam processada no navegador.
+- Dashboard com metricas, graficos e status da sessao.
+- Rotas `/`, `/demo`, `/dashboard` e `/about`.
+- PWA basico com `manifest.json`.
+- Creditos permanentes e clicaveis de Matheus Siqueira.
+- Documentacao de arquitetura e privacidade.
+- Testes unitarios para contagem, classificacao e metricas.
 
-```bash
-pip install opencv-python mediapipe
+## Demonstracao
+
+A versao Python abre uma janela do OpenCV e mostra o overlay de gesto, dedos e FPS. A versao web roda em Next.js e deve ser publicada na Vercel com `web_app` como Root Directory.
+
+## Tecnologias
+
+- Python
+- OpenCV
+- MediaPipe
+- Pytest
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Recharts
+- Vercel Analytics
+
+## Estrutura do projeto
+
+```txt
+.
+├── docs/
+│   ├── ARCHITECTURE.md
+│   └── PRIVACY.md
+├── python_app/
+│   ├── camera.py
+│   ├── finger_counter.py
+│   ├── gesture_classifier.py
+│   ├── hand_detector.py
+│   ├── main.py
+│   ├── metrics.py
+│   └── overlay.py
+├── tests/
+├── web_app/
+│   ├── public/
+│   └── src/
+├── README.md
+└── requirements.txt
 ```
 
-*(Nota: O `mediapipe` já inclui as dependências necessárias para processamento de ML, e o `opencv-python` lida com a parte de vídeo)*
-
-##  Como Rodar
-
-1. Certifique-se de que sua webcam não está sendo usada por outro aplicativo (Zoom, Teams, etc.).
-2. Execute o script principal:
+## Como rodar a versao Python
 
 ```bash
-python hand_gestures.py
+pip install -r requirements.txt
+python python_app/main.py
+pytest -q
 ```
 
-3. Uma janela abrirá mostrando o vídeo da sua webcam.
-4. **Levante a mão** para ver o esqueleto (landmarks) desenhado e a contagem de dedos.
-5. Pressione a tecla **'q'** com a janela do vídeo selecionada para fechar o programa.
+Observacao: MediaPipe pode ainda nao disponibilizar wheel para algumas versoes muito recentes do Python. Nesse caso, use Python 3.11 ou 3.12 para a experiencia completa com webcam e MediaPipe.
 
-##  Como Funciona (Lógica do Código)
+## Como rodar a versao Web
 
-O sistema segue este fluxo:
+```bash
+cd web_app
+npm install
+npm run dev
+npm run lint
+npm run build
+```
 
-1.  **Captura de Vídeo**: O OpenCV captura frames contínuos da webcam.
-2.  **Pré-processamento**:
-    - Espelhamos a imagem (`cv2.flip`) para ficar natural como um espelho.
-    - Convertemos de BGR (formato do OpenCV) para RGB (formato do MediaPipe).
-3.  **Detecção (MediaPipe)**: O modelo `hands` processa a imagem RGB e retorna as coordenadas de 21 pontos (landmarks) por mão detectada.
-4.  **Contagem de Dedos (Heurística)**:
-    - **4 Dedos Principais (Indicador ao Mínimo)**: Verificamos a altura do ponto da ponta do dedo em relação à articulação do meio. Como no computador a coordenada Y cresce de cima para baixo:
-        - Se `Y_ponta < Y_articulação`, o dedo está **levantado**.
-    - **Polegar**: O polegar se move lateralmente. Verificamos a posição horizontal (eixo X) da ponta em relação à articulação base.
-        - Dependendo se a mão é esquerda ou direita, verificamos se o polegar está "para fora" da palma.
+## Como publicar na Vercel
 
-## 🛠️ Possíveis Melhorias Futuras
+Importe o repositorio na Vercel e use:
 
-Para evoluir este projeto e usar no portfólio, considere implementar:
+```txt
+Root Directory: web_app
+Build Command: npm run build
+Install Command: npm install
+Output Directory: .next
+```
 
-1.  **Reconhecimento de Gestos Específicos**:
-    - Detectar padrões como "Soco Fechado", "Paz e Amor" (dedos 2 e 3 levantados), "Rock" (dedos 2 e 5), etc. 
-    - Criar um dicionário mapeando combinações de dedos `[0,1,1,0,0]` para nomes de gestos.
-2.  **Controle do PC**:
-    - Usar a biblioteca `pyautogui` para controlar o mouse ou volume baseado em gestos (ex: pinça com indicador e polegar controla volume).
-3.  **Interface Gráfica (GUI)**:
-    - Usar `Streamlit` ou `PyGQt` para criar botões de configuração na tela, ao invés de usar apenas a janela do OpenCV.
-4.  **Múltiplas Mãos**:
-    - O código já suporta detecção de 2 mãos (`max_num_hands=2`), mas a lógica de contagem pode ser refinada para somar o total de dedos de ambas as mãos.
+Nao publique a pasta Python como app Vercel. A aplicacao web que deve ir para a Vercel esta em `web_app/`.
 
----
-*Desenvolvido para fins educacionais e portfólio.*
+## Como funciona a deteccao de maos
+
+Na versao Python, o OpenCV captura frames da webcam e o MediaPipe Hands identifica 21 landmarks por mao. Na versao web, o componente de demo carrega MediaPipe no navegador depois que o usuario concede permissao de camera.
+
+## Como funciona a contagem de dedos
+
+A contagem compara a posicao da ponta de cada dedo com suas articulacoes. Para indicador, medio, anelar e minimo, a ponta acima da articulacao indica dedo levantado. Para o polegar, a regra considera a lateralidade da mao.
+
+## Como funciona o dashboard
+
+O dashboard apresenta metricas de FPS, frames processados, gesto dominante, confianca e distribuicao de gestos. Ele foi desenhado para explicar o funcionamento do reconhecedor e servir como base para evolucoes futuras.
+
+## Privacidade
+
+Esta aplicação é uma demonstração técnica de visão computacional. O processamento ocorre localmente no navegador e nenhuma imagem da webcam é enviada para servidores.
+
+O app nao faz identificacao pessoal, nao armazena biometria e nao grava frames da webcam.
+
+## Limitacoes conhecidas
+
+- Iluminacao baixa pode reduzir a precisao.
+- Oclusao dos dedos pode gerar contagem incorreta.
+- A versao Python depende de webcam local e suporte do MediaPipe ao Python instalado.
+- A demo web depende de permissao de camera e suporte do navegador a `getUserMedia`.
+
+## Roadmap
+
+- Exportar sessoes anonimas de metricas.
+- Adicionar novos gestos customizaveis.
+- Melhorar suporte a multiplas maos.
+- Criar testes end-to-end da demo web.
+- Adicionar CI com validacao Python e Next.js.
+
+## Creditos
+
+Desenvolvido por Matheus Siqueira.
+
+Portfolio: [www.matheussiqueira.dev](https://www.matheussiqueira.dev)
+
+GitHub: [matheussiqueira-dev](https://github.com/matheussiqueira-dev)
