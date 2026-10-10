@@ -14,7 +14,7 @@ next-env.d.ts
 npm-debug.log*
 
 # MediaPipe WASM copied from node_modules at build time
-public/mediapipe/
+**/public/mediapipe/
 
 # Test output
 coverage/
