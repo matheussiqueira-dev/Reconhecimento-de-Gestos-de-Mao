@@ -1,111 +1,91 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Camera, Gauge, Hand, ShieldCheck } from "lucide-react";
-import { DeveloperCredits } from "@/components/credits/DeveloperCredits";
+import { ArrowRight } from "lucide-react";
+import { GestureCatalog } from "@/components/GestureCatalog";
 import { PrivacyNotice } from "@/components/PrivacyNotice";
+import { REPOSITORY_URL } from "@/lib/site";
 
-const featureItems = [
-  {
-    title: "Webcam local",
-    description: "Captura sob permissao do usuario e processamento no navegador.",
-    icon: Camera,
-  },
-  {
-    title: "Contagem de dedos",
-    description: "Heuristica sobre landmarks para identificar dedos levantados.",
-    icon: Hand,
-  },
-  {
-    title: "Metricas em tempo real",
-    description: "FPS, confianca, gesto dominante e distribuicao de eventos.",
-    icon: Gauge,
-  },
-  {
-    title: "Privacidade clara",
-    description: "Sem envio de frames, sem biometria armazenada e sem identificacao.",
-    icon: ShieldCheck,
-  },
-];
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
-export default function Home() {
+const STEPS = [
+  {
+    title: "Câmera local",
+    text: "O navegador lê a webcam só depois da sua permissão. Os quadros ficam no dispositivo.",
+  },
+  {
+    title: "21 pontos por mão",
+    text: "O MediaPipe Hand Landmarker (WebAssembly, GPU quando disponível) localiza até duas mãos por quadro.",
+  },
+  {
+    title: "Regras explicáveis",
+    text: "Pontas acima das articulações contam como dedos levantados; a distância polegar–indicador define a pinça. Uma janela de 5 quadros evita oscilação.",
+  },
+] as const;
+
+export default function HomePage() {
   return (
-    <div>
-      <section className="border-b border-[var(--border)] bg-white">
-        <div className="content-shell grid min-h-[calc(100vh-64px)] items-center gap-10 py-10 lg:grid-cols-[1fr_0.86fr]">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--teal)]">
-              Hand Gesture Recognition Dashboard
-            </p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-bold leading-tight text-[var(--ink)] sm:text-5xl">
-              Reconhecimento de gestos de mao com Python, MediaPipe e Next.js.
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-[var(--muted)]">
-              Uma entrega tecnica completa com versao Python local, demo web com
-              webcam, dashboard inteligente, documentacao de privacidade e deploy
-              preparado para Vercel.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                href="/demo"
-                className="focus-ring inline-flex items-center gap-2 rounded-md bg-[var(--teal)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0b5f59]"
-              >
-                Abrir demo
-                <ArrowRight aria-hidden="true" size={18} />
-              </Link>
-              <Link
-                href="/dashboard"
-                className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--blue)]"
-              >
-                Ver dashboard
-              </Link>
-            </div>
+    <div className="grid gap-16">
+      <section className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
+        <div className="grid content-start gap-6">
+          <h1 className="max-w-[18ch] text-display">Gestos de mão lidos pela câmera, no navegador</h1>
+          <p className="text-lead text-fg-secondary">
+            Uma demo de visão computacional: o MediaPipe localiza a mão, regras escritas à mão contam os dedos e
+            nomeiam 11 gestos, e um painel mostra as métricas reais da sua sessão. Nada sai do seu dispositivo.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/demo" className="ms-btn ms-btn--primary">
+              Abrir a demo
+              <ArrowRight size={16} strokeWidth={1.75} aria-hidden="true" />
+            </Link>
+            <Link href="/about" className="ms-btn ms-btn--secondary">
+              Como funciona
+            </Link>
           </div>
-
-          <div className="surface overflow-hidden">
-            <div className="border-b border-[var(--border)] bg-[var(--ink)] px-5 py-4 text-white">
-              <p className="text-sm text-slate-300">Live recognition panel</p>
-              <p className="mt-1 text-2xl font-semibold">Palma aberta</p>
-            </div>
-            <div className="grid gap-4 p-5 sm:grid-cols-2">
-              {[
-                ["FPS", "58.4", "var(--teal)"],
-                ["Dedos", "5", "var(--blue)"],
-                ["Confianca", "97%", "var(--amber)"],
-                ["Latencia", "18 ms", "var(--red)"],
-              ].map(([label, value, color]) => (
-                <div key={label} className="metric-card">
-                  <p className="text-sm text-[var(--muted)]">{label}</p>
-                  <p className="mt-3 text-3xl font-bold" style={{ color }}>
-                    {value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <p className="text-caption text-fg-tertiary">
+            Requer uma câmera e um navegador recente. O modelo (7,8 MB) só é baixado quando você ativa a câmera.
+          </p>
         </div>
+        <section aria-labelledby="catalog-title" className="grid gap-3">
+          <h2 id="catalog-title" className="text-h3">
+            Gestos reconhecidos
+          </h2>
+          <GestureCatalog />
+        </section>
       </section>
 
-      <section className="content-shell py-12">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {featureItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <article key={item.title} className="metric-card">
-                <Icon aria-hidden="true" className="text-[var(--teal)]" />
-                <h2 className="mt-4 text-lg font-semibold text-[var(--ink)]">
-                  {item.title}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                  {item.description}
-                </p>
-              </article>
-            );
-          })}
-        </div>
+      <section aria-labelledby="steps-title" className="grid gap-6">
+        <h2 id="steps-title" className="text-h2">
+          Do quadro ao gesto em três etapas
+        </h2>
+        <ol className="grid gap-4 md:grid-cols-3">
+          {STEPS.map((step, index) => (
+            <li key={step.title} className="ms-card grid content-start gap-2">
+              <p className="ms-num text-caption font-semibold text-fg-tertiary">Etapa {index + 1}</p>
+              <h3 className="text-h4">{step.title}</h3>
+              <p className="text-caption text-fg-secondary">{step.text}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
-      <section className="content-shell grid gap-5 pb-12 lg:grid-cols-[1fr_0.7fr]">
+      <section aria-labelledby="python-title" className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+        <div className="grid gap-3">
+          <h2 id="python-title" className="text-h2">
+            Duas implementações, as mesmas regras
+          </h2>
+          <p className="text-fg-secondary">
+            Este site usa as regras em TypeScript. O repositório também traz o app desktop original em Python
+            (OpenCV + MediaPipe), com HUD e seleção de câmera. As duas versões passam pelos mesmos casos de teste.
+          </p>
+          <p>
+            <a href={REPOSITORY_URL} className="ms-link" target="_blank" rel="noopener noreferrer">
+              Ver o código no GitHub<span className="ms-sr-only"> (abre em nova aba)</span>
+            </a>
+          </p>
+        </div>
         <PrivacyNotice />
-        <DeveloperCredits compact />
       </section>
     </div>
   );

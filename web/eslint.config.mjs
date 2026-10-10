@@ -8,7 +8,10 @@ const eslintConfig = defineConfig([
   globalIgnores([
     ".next/**",
     "out/**",
-    "next-env.d.ts"
+    "next-env.d.ts",
+    "public/mediapipe/**",
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

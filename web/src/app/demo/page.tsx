@@ -1,31 +1,46 @@
-import { WebcamGestureDemo } from "@/components/demo/WebcamGestureDemo";
-import { DeveloperCredits } from "@/components/credits/DeveloperCredits";
+import type { Metadata } from "next";
+import { CameraDemo } from "@/components/demo/CameraDemo";
 import { PrivacyNotice } from "@/components/PrivacyNotice";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Demo",
-  description: "Demo com webcam para reconhecimento local de gestos de mao.",
+  description:
+    "Ative a câmera e veja o MediaPipe localizar sua mão e as regras nomearem o gesto em tempo real, sem enviar o vídeo.",
+  alternates: { canonical: "/demo" },
 };
+
+const TIPS = [
+  "Mostre a palma de frente para a câmera, a cerca de meio metro.",
+  "Prefira luz frontal; contraluz e pouca luz derrubam a detecção.",
+  "Mantenha uma pose por meio segundo: a leitura usa os últimos 5 quadros.",
+  "Polegar, L e OK dependem da lateralidade; com o vídeo espelhado, a mão direita aparece à direita.",
+] as const;
 
 export default function DemoPage() {
   return (
-    <div className="content-shell py-10">
-      <div className="mb-7 max-w-3xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--teal)]">
-          Demo com webcam
-        </p>
-        <h1 className="mt-3 text-3xl font-bold text-[var(--ink)] sm:text-4xl">
-          Reconhecimento local direto no navegador.
-        </h1>
-        <p className="mt-4 text-base leading-7 text-[var(--muted)]">
-          A camera so inicia apos sua permissao. O componente carrega MediaPipe no
-          client-side e calcula contagem de dedos sem enviar frames ao servidor.
+    <div className="grid grid-cols-1 gap-8">
+      <div className="grid gap-3">
+        <h1 className="text-h1">Demo com câmera</h1>
+        <p className="text-lead text-fg-secondary">
+          Ative a câmera e mostre uma ou duas mãos. O gesto, os dedos levantados e a confiança do modelo
+          aparecem no painel de leitura, atualizados cerca de dez vezes por segundo.
         </p>
       </div>
-      <WebcamGestureDemo />
-      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_0.7fr]">
+
+      <CameraDemo />
+
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <section aria-labelledby="tips-title" className="grid gap-3">
+          <h2 id="tips-title" className="text-h3">
+            Para uma leitura estável
+          </h2>
+          <ul className="grid list-disc gap-2 pl-5 text-caption text-fg-secondary">
+            {TIPS.map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
+          </ul>
+        </section>
         <PrivacyNotice />
-        <DeveloperCredits compact />
       </div>
     </div>
   );

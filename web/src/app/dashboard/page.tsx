@@ -1,30 +1,24 @@
-import { DashboardClient } from "@/components/dashboard/DashboardClient";
-import { DeveloperCredits } from "@/components/credits/DeveloperCredits";
+import type { Metadata } from "next";
+import { SessionDashboard } from "@/components/dashboard/SessionDashboard";
 
-export const metadata = {
-  title: "Dashboard",
-  description: "Metricas e visualizacao do reconhecimento de gestos de mao.",
+export const metadata: Metadata = {
+  title: "Painel da sessão",
+  description:
+    "Métricas reais da sua sessão na demo: tempo de câmera, quadros processados, quadros por segundo, inferência e gestos.",
+  alternates: { canonical: "/dashboard" },
 };
 
 export default function DashboardPage() {
   return (
-    <div className="content-shell py-10">
-      <div className="mb-7 max-w-3xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--teal)]">
-          Dashboard inteligente
-        </p>
-        <h1 className="mt-3 text-3xl font-bold text-[var(--ink)] sm:text-4xl">
-          Metricas para acompanhar uma sessao de reconhecimento.
-        </h1>
-        <p className="mt-4 text-base leading-7 text-[var(--muted)]">
-          A interface organiza desempenho, distribuicao de gestos e qualidade de
-          deteccao para facilitar debugging, demonstracao e evolucao do produto.
+    <div className="grid gap-8">
+      <div className="grid gap-3">
+        <h1 className="text-h1">Painel da sessão</h1>
+        <p className="text-lead text-fg-secondary">
+          O que a demo mediu enquanto a sua câmera esteve ativa nesta aba: desempenho do modelo e quais gestos
+          apareceram. Sem dados de exemplo.
         </p>
       </div>
-      <DashboardClient />
-      <div className="mt-6">
-        <DeveloperCredits compact />
-      </div>
+      <SessionDashboard />
     </div>
   );
 }
