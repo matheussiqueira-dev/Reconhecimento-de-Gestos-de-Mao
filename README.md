@@ -1,133 +1,133 @@
-# Hand Gesture Recognition Dashboard
+# Reconhecimento de Gestos de Mão
 
-Dashboard de reconhecimento de gestos de mao desenvolvido por Matheus Siqueira. O projeto combina uma versao Python local com OpenCV e MediaPipe e uma versao web em Next.js preparada para deploy na Vercel.
+Demo de visão computacional que reconhece gestos de mão pela câmera, direto no navegador. O MediaPipe Hand Landmarker localiza 21 pontos de cada mão; regras explicáveis contam os dedos levantados e nomeiam 11 gestos; um painel mostra as métricas reais da sessão. O vídeo não sai do dispositivo.
 
-## Visao geral
+O repositório tem duas implementações das mesmas regras:
 
-A aplicacao detecta maos, extrai landmarks, conta dedos levantados e apresenta gestos comuns como palma aberta, punho fechado, joinha, paz e apontando. A versao web adiciona landing page, demo com webcam, dashboard de metricas, PWA basico, SEO tecnico e documentacao de privacidade.
+- **`web/`**: o site (Next.js 16, TypeScript, Tailwind CSS 4), publicado na Vercel;
+- **`python/`**: o app desktop original (Python 3.12, OpenCV, MediaPipe), com HUD e seleção de câmera.
+
+As duas passam pelos mesmos casos de teste sintéticos em `fixtures/gestures/`.
+
+**Demo:** https://reconhecimento-de-mao.vercel.app
+
+![Página inicial em 1440 px](docs/screenshots/home-1440.png)
 
 ## Funcionalidades
 
-- Reconhecimento local com Python, OpenCV e MediaPipe.
-- Arquitetura Python modular em `python_app/`.
-- Demo web com webcam processada no navegador.
-- Dashboard com metricas, graficos e status da sessao.
-- Rotas `/`, `/demo`, `/dashboard` e `/about`.
-- PWA basico com `manifest.json`.
-- Creditos permanentes e clicaveis de Matheus Siqueira.
-- Documentacao de arquitetura e privacidade.
-- Testes unitarios para contagem, classificacao e metricas.
+- Câmera ativada só depois do clique, com estados próprios para permissão negada, câmera ausente ou em uso, contexto inseguro e falha ao carregar o modelo.
+- Até duas mãos por quadro, com overlay dos 21 pontos, gesto, dedos levantados e a confiança do modelo na lateralidade.
+- Gestos: Punho fechado, Mão aberta, Paz, Rock, Polegar, Indicador, L, Três, Quatro, OK e Pinça (as regras estão em [Como funciona](https://reconhecimento-de-mao.vercel.app/about)).
+- Suavização por maioria em 5 quadros; sem mão no quadro, a tela mostra "Nenhuma mão detectada".
+- Painel da sessão com tempo de câmera, quadros processados, quadros por segundo, inferência média, distribuição de gestos e linha do tempo, cada gráfico com tabela alternativa.
+- Dark-only, IBM Plex Sans, tokens `ms-tokens.css` v1.0 compartilhados com o portfólio.
 
-## Demonstracao
+## Arquitetura
 
-A versao Python abre uma janela do OpenCV e mostra o overlay de gesto, dedos e FPS. A versao web roda em Next.js e deve ser publicada na Vercel com `web_app` como Root Directory.
-
-## Tecnologias
-
-- Python
-- OpenCV
-- MediaPipe
-- Pytest
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
-- Recharts
-- Vercel Analytics
-
-## Estrutura do projeto
-
-```txt
+```
 .
-├── docs/
-│   ├── ARCHITECTURE.md
-│   └── PRIVACY.md
-├── python_app/
-│   ├── camera.py
-│   ├── finger_counter.py
-│   ├── gesture_classifier.py
-│   ├── hand_detector.py
-│   ├── main.py
-│   ├── metrics.py
-│   └── overlay.py
-├── tests/
-├── web_app/
-│   ├── public/
-│   └── src/
-├── README.md
-└── requirements.txt
+├── web/                 Next.js App Router, só páginas estáticas (nenhuma Function)
+│   ├── src/lib/gestures      regras, suavização e conversão para o quadro selfie
+│   ├── src/lib/mediapipe     carregamento do modelo e do runtime WASM
+│   ├── src/components/demo   câmera, overlay e leitura
+│   └── tests/{unit,e2e}      Vitest e Playwright + axe
+├── python/              app desktop (hand_gestures/) e seus testes
+├── fixtures/gestures/   poses sintéticas com o resultado esperado, usadas pelos dois lados
+├── tools/brand/         gerador do monograma, ícones e imagem OG
+└── docs/                ADRs, privacidade, segurança, capturas
 ```
 
-## Como rodar a versao Python
+Fluxo no navegador: `getUserMedia` → `HandLandmarker.detectForVideo` (MediaPipe Tasks Vision 0.10.35, WebAssembly servido pelo próprio site, GPU com fallback para CPU) → conversão para o quadro selfie → regras → suavização → overlay em canvas e leitura a ~10 Hz. Detalhes e decisões em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) e [docs/adr/](docs/adr/).
+
+## Rodar a versão web
+
+Requer Node.js 24 (veja `web/.nvmrc`) e npm.
 
 ```bash
-pip install -r requirements.txt
-python python_app/main.py
-pytest -q
-```
-
-Observacao: MediaPipe pode ainda nao disponibilizar wheel para algumas versoes muito recentes do Python. Nesse caso, use Python 3.11 ou 3.12 para a experiencia completa com webcam e MediaPipe.
-
-## Como rodar a versao Web
-
-```bash
-cd web_app
-npm install
+cd web
+npm ci
 npm run dev
-npm run lint
-npm run build
 ```
 
-## Como publicar na Vercel
+`npm run dev` e `npm run build` copiam antes o runtime WASM do MediaPipe de `node_modules` para `public/mediapipe/<versão>/` (pasta ignorada pelo Git).
 
-Importe o repositorio na Vercel e use:
+| Script | O que faz |
+|---|---|
+| `npm run lint` | ESLint (config do Next), sem avisos |
+| `npm run typecheck` | `next typegen && tsc --noEmit` (funciona num clone limpo) |
+| `npm test` | Vitest: regras contra as fixtures, versão do MediaPipe, hash dos tokens |
+| `npm run build` | build de produção; todas as rotas estáticas |
+| `npm run test:e2e` | Playwright + axe; faz um build com `NEXT_PUBLIC_E2E_STUBS=1` e sobe na porta 3200 |
 
-```txt
-Root Directory: web_app
-Build Command: npm run build
-Install Command: npm install
-Output Directory: .next
+O e2e usa o Microsoft Edge instalado (`PLAYWRIGHT_CHANNEL=msedge`, padrão local). No CI, `PLAYWRIGHT_CHANNEL=chromium`. Um dos testes carrega o modelo real e precisa de acesso a `storage.googleapis.com`.
+
+## Rodar a versão Python
+
+Requer Python 3.12 (o `mediapipe` 0.10.21, última versão com a API `mp.solutions`, não tem wheel para 3.13).
+
+```bash
+cd python
+python -m venv .venv
+.venv/Scripts/activate        # Windows; no Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+python -m hand_gestures --help
+python -m hand_gestures                      # primeira câmera que funcionar
+python -m hand_gestures --camera-name "Brio" # por nome (Windows, requer pip install pygrabber==0.2)
+python -m hand_gestures --self-check         # testa o MediaPipe sem câmera
 ```
 
-Nao publique a pasta Python como app Vercel. A aplicacao web que deve ir para a Vercel esta em `web_app/`.
+Teclas na janela: `q` sai, `l` liga/desliga os pontos, `h` liga/desliga o HUD.
 
-## Como funciona a deteccao de maos
+Testes e checagens (não precisam do OpenCV nem do MediaPipe):
 
-Na versao Python, o OpenCV captura frames da webcam e o MediaPipe Hands identifica 21 landmarks por mao. Na versao web, o componente de demo carrega MediaPipe no navegador depois que o usuario concede permissao de camera.
+```bash
+cd python
+pip install -r requirements-dev.txt
+sh scripts/check.sh   # ruff, formatação, mypy estrito e pytest com cobertura
+```
 
-## Como funciona a contagem de dedos
+## Deploy na Vercel
 
-A contagem compara a posicao da ponta de cada dedo com suas articulacoes. Para indicador, medio, anelar e minimo, a ponta acima da articulacao indica dedo levantado. Para o polegar, a regra considera a lateralidade da mao.
+Um projeto, só o app web, sem Functions nem variáveis obrigatórias.
 
-## Como funciona o dashboard
+| Configuração | Valor |
+|---|---|
+| Root Directory | `web` |
+| Framework Preset | Next.js (fixado em `web/vercel.json`) |
+| Install / Build | padrão do preset (`npm ci` / `npm run build`) |
+| Node.js | 24.x (`engines` do `web/package.json`) |
 
-O dashboard apresenta metricas de FPS, frames processados, gesto dominante, confianca e distribuicao de gestos. Ele foi desenhado para explicar o funcionamento do reconhecedor e servir como base para evolucoes futuras.
+O projeto `reconhecimento-de-mao` já existe na Vercel; para publicar, ajuste o Root Directory para `web` e faça o merge na `main`. O `.vercelignore` da raiz deixa `python/`, `tools/` e `fixtures/` fora de uploads pela CLI.
+
+### Variáveis de ambiente
+
+| Nome | Escopo | Obrigatória | Uso |
+|---|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | Production, Preview | Não | Origem absoluta para canonical, Open Graph e sitemap. Padrão: `VERCEL_PROJECT_PRODUCTION_URL` e, sem ela, `https://reconhecimento-de-mao.vercel.app` |
+| `NEXT_PUBLIC_E2E_STUBS` | nenhum | Não | Só para o build de e2e. Nunca configure na Vercel |
+
+`VERCEL_PROJECT_PRODUCTION_URL` e `VERCEL_GIT_COMMIT_SHA` (versão no rodapé) são variáveis de sistema da Vercel. Veja `web/.env.example`.
 
 ## Privacidade
 
-Esta aplicação é uma demonstração técnica de visão computacional. O processamento ocorre localmente no navegador e nenhuma imagem da webcam é enviada para servidores.
+- Nenhum quadro, imagem ou ponto da mão é enviado. A inferência roda no navegador.
+- Ao ativar a câmera, o navegador baixa o modelo Hand Landmarker (7,8 MB, Apache-2.0) do Google Cloud Storage; é a única requisição a terceiros.
+- Sem analytics, cookies ou cadastro. Métricas da sessão ficam na memória da aba; preferências (espelhar, mostrar pontos) no `localStorage`.
 
-O app nao faz identificacao pessoal, nao armazena biometria e nao grava frames da webcam.
+Detalhes em [docs/PRIVACY.md](docs/PRIVACY.md). Segurança (CSP, headers, dependências) em [docs/SECURITY.md](docs/SECURITY.md).
 
-## Limitacoes conhecidas
+## Limitações
 
-- Iluminacao baixa pode reduzir a precisao.
-- Oclusao dos dedos pode gerar contagem incorreta.
-- A versao Python depende de webcam local e suporte do MediaPipe ao Python instalado.
-- A demo web depende de permissao de camera e suporte do navegador a `getUserMedia`.
+- As regras assumem a mão em pé com a palma voltada para a câmera; mão deitada, de costas ou com dedos sobrepostos engana a contagem.
+- Pouca luz e contraluz reduzem a detecção.
+- Um punho com a ponta do polegar encostada na do indicador pode ser lido como Pinça.
+- O e2e verifica a interface com poses sintéticas e o carregamento do modelo real com uma câmera sintética; o reconhecimento com uma mão de verdade é verificado manualmente.
+- Não serve para identificação, autenticação nem uso clínico.
 
-## Roadmap
+## Licença
 
-- Exportar sessoes anonimas de metricas.
-- Adicionar novos gestos customizaveis.
-- Melhorar suporte a multiplas maos.
-- Criar testes end-to-end da demo web.
-- Adicionar CI com validacao Python e Next.js.
+MIT. Veja [LICENSE](LICENSE). O modelo Hand Landmarker e o MediaPipe são Apache-2.0; a IBM Plex Sans é OFL-1.1.
 
-## Creditos
+---
 
-Desenvolvido por Matheus Siqueira.
-
-Portfolio: [www.matheussiqueira.dev](https://www.matheussiqueira.dev)
-
-GitHub: [matheussiqueira-dev](https://github.com/matheussiqueira-dev)
+Desenvolvido por Matheus Siqueira · [www.matheussiqueira.dev](https://www.matheussiqueira.dev) · [LinkedIn](https://www.linkedin.com/in/matheussiqueira-dev) · [GitHub](https://github.com/matheussiqueira-dev)

@@ -1,16 +1,27 @@
 # Privacidade
 
-Esta aplicação é uma demonstração técnica de visão computacional. O processamento ocorre localmente no navegador e nenhuma imagem da webcam é enviada para servidores.
+Esta é uma demonstração técnica de visão computacional. O processamento da câmera acontece no seu dispositivo.
 
-## Principios
+## O que sai do navegador
 
-- A webcam so e ativada apos permissao explicita do usuario.
-- Frames de video sao processados localmente no navegador.
-- O projeto nao faz identificacao pessoal.
-- O projeto nao armazena biometria.
-- O projeto nao grava imagens, videos ou audio.
-- A versao Python tambem processa frames localmente no computador do usuario.
+| Requisição | Quando | Destino | Conteúdo |
+|---|---|---|---|
+| Páginas, JS, CSS, fontes, ícones, runtime WASM | ao navegar | o próprio site (Vercel) | requisição web comum |
+| Modelo `hand_landmarker.task` (7,8 MB) | ao clicar em "Ativar câmera", uma vez por visita | `storage.googleapis.com` (Google Cloud Storage) | requisição web comum: IP, navegador; sem cookies (`credentials: "omit"`) e sem referer |
 
-## Limitacoes
+Nenhum quadro, imagem, vídeo, áudio ou ponto da mão é enviado a qualquer servidor.
 
-O app demonstra reconhecimento de gestos para fins educacionais e de portfolio. Ele nao deve ser usado como sistema de autenticacao, vigilancia, controle medico ou decisao automatizada de alto impacto.
+## O que fica no dispositivo
+
+- Métricas da sessão (quadros, FPS, gestos): só na memória da aba. Recarregar a página apaga.
+- Preferências da demo (espelhar vídeo, mostrar pontos): `localStorage`, chave `gestos-de-mao:preferences:v1`.
+
+Não há analytics, Speed Insights, cookies, cadastro nem identificação de pessoas. O app não guarda biometria.
+
+## App desktop (Python)
+
+Processa os quadros localmente e não faz requisições de rede durante o uso. A instalação baixa pacotes do PyPI.
+
+## Limites de uso
+
+O projeto é educacional e de portfólio. Não use como sistema de autenticação, vigilância, uso clínico ou decisão automatizada de alto impacto.
