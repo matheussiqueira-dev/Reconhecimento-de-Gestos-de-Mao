@@ -1,0 +1,253 @@
+"""Generate the app's brand assets (Apendice A.9 of the shared design standard).
+
+Outputs (all committed):
+  web/src/app/icon.svg        favicon, GM monogram as outlines
+  web/src/app/favicon.ico     16/32/48 px
+  web/src/app/apple-icon.png  180 px, opaque
+  web/public/icon-192.png, web/public/icon-512.png   manifest icons
+  web/public/og.png           1200x630 share card
+  web/src/components/shell/brand-mark.ts   monogram path for the header
+
+Colours come from web/src/app/ms-tokens.css, so this file holds no colour literal.
+The monogram is IBM Plex Sans Bold converted to outlines (fonts do not load
+inside favicons). Fonts are passed in; nothing is downloaded:
+
+  python tools/brand/generate_assets.py \
+      --plex-dir <path to @fontsource/ibm-plex-sans@5.3.0/files> \
+      --mono-font <path to a monospace .ttf>
+
+Requirements: tools/brand/requirements.txt (Pillow, fontTools, Brotli).
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import tempfile
+from pathlib import Path
+
+from fontTools.pens.boundsPen import BoundsPen
+from fontTools.pens.svgPathPen import SVGPathPen
+from fontTools.pens.transformPen import TransformPen
+from fontTools.ttLib import TTFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+ROOT = Path(__file__).resolve().parents[2]
+WEB = ROOT / "web"
+TOKENS = WEB / "src" / "app" / "ms-tokens.css"
+
+MONOGRAM = "GM"
+# Broken by hand so no single word is left alone on the second line.
+PRODUCT_LINES = ("Reconhecimento de", "Gestos de Mão")
+VALUE_LINE = "Gestos lidos pela câmera, direto no navegador. Nada é enviado."
+STACK = ("Next.js", "TypeScript", "MediaPipe", "Python", "OpenCV")
+EYEBROW = "Projeto · Matheus Siqueira"
+DOMAIN = "www.matheussiqueira.dev"
+
+RGBA = tuple[int, int, int, int]
+
+
+def read_tokens() -> dict[str, RGBA]:
+    css = TOKENS.read_text(encoding="utf-8")
+    tokens: dict[str, RGBA] = {}
+    for name, value in re.findall(r"(--ms-[a-z0-9-]+):\s*([^;]+);", css):
+        value = value.strip()
+        if m := re.fullmatch(r"#([0-9a-fA-F]{6})", value):
+            h = m.group(1)
+            tokens[name] = (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), 255)
+        elif m := re.fullmatch(r"rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)", value):
+            r, g, b, a = m.groups()
+            tokens[name] = (int(r), int(g), int(b), round(float(a) * 255))
+    return tokens
+
+
+def css_color(color: RGBA) -> str:
+    r, g, b, a = color
+    if a == 255:
+        return f"#{r:02x}{g:02x}{b:02x}"
+    return f"rgba({r},{g},{b},{a / 255:.2f})"
+
+
+def to_ttf(woff2: Path, out_dir: Path) -> Path:
+    font = TTFont(woff2)
+    font.flavor = None
+    target = out_dir / (woff2.stem + ".ttf")
+    font.save(target)
+    return target
+
+
+def monogram_path(font_path: Path, box: tuple[float, float, float, float]) -> str:
+    """SVG path for MONOGRAM, scaled and centred inside box = (x, y, width, height)."""
+    font = TTFont(font_path)
+    glyph_set = font.getGlyphSet()
+    cmap = font.getBestCmap()
+    units_per_em = font["head"].unitsPerEm
+
+    # Measure the run in font units.
+    bounds = BoundsPen(glyph_set)
+    pen_x = 0.0
+    for char in MONOGRAM:
+        name = cmap[ord(char)]
+        glyph_set[name].draw(TransformPen(bounds, (1, 0, 0, 1, pen_x, 0)))
+        pen_x += glyph_set[name].width
+    x_min, y_min, x_max, y_max = bounds.bounds
+    width_units, height_units = x_max - x_min, y_max - y_min
+
+    bx, by, bw, bh = box
+    scale = min(bw / width_units, bh / height_units)
+    offset_x = bx + (bw - width_units * scale) / 2 - x_min * scale
+    offset_y = by + (bh - height_units * scale) / 2 + y_max * scale
+
+    svg = SVGPathPen(glyph_set, ntos=lambda v: f"{v:.2f}".rstrip("0").rstrip("."))
+    pen_x = 0.0
+    for char in MONOGRAM:
+        name = cmap[ord(char)]
+        transform = (scale, 0, 0, -scale, offset_x + pen_x * scale, offset_y)
+        glyph_set[name].draw(TransformPen(svg, transform))
+        pen_x += glyph_set[name].width
+    del units_per_em
+    return svg.getCommands()
+
+
+# Favicon geometry on a 32x32 grid: monogram box, then a 10x2 accent bar under it.
+MONOGRAM_BOX = (6.0, 8.5, 20.0, 11.0)
+BAR = (11.0, 22.5, 10.0, 2.0)
+
+
+def write_svg_icon(path_d: str, tokens: dict[str, RGBA]) -> None:
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+        f'<rect x="0.5" y="0.5" width="31" height="31" rx="7" fill="{css_color(tokens["--ms-surface"])}" '
+        f'stroke="{css_color(tokens["--ms-border-strong"])}"/>'
+        f'<path d="{path_d}" fill="{css_color(tokens["--ms-text"])}"/>'
+        f'<rect x="{BAR[0]}" y="{BAR[1]}" width="{BAR[2]}" height="{BAR[3]}" rx="1" '
+        f'fill="{css_color(tokens["--ms-accent"])}"/>'
+        "</svg>\n"
+    )
+    (WEB / "src" / "app" / "icon.svg").write_text(svg, encoding="utf-8", newline="\n")
+
+
+def write_brand_mark_module(path_d: str) -> None:
+    module = (
+        "// Generated by tools/brand/generate_assets.py: IBM Plex Sans Bold \"GM\" as outlines.\n"
+        "// Colours are applied with CSS tokens where the mark is rendered.\n"
+        f'export const BRAND_MARK_PATH = "{path_d}";\n'
+        f"export const BRAND_MARK_BAR = {{ x: {BAR[0]}, y: {BAR[1]}, width: {BAR[2]}, height: {BAR[3]} }};\n"
+    )
+    target = WEB / "src" / "components" / "shell" / "brand-mark.ts"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(module, encoding="utf-8", newline="\n")
+
+
+def render_icon(size: int, bold: Path, tokens: dict[str, RGBA], *, rounded: bool) -> Image.Image:
+    """Raster of the favicon design, drawn at 8x and downsampled for clean edges."""
+    ss = 8
+    canvas = size * ss
+    unit = canvas / 32
+    image = Image.new("RGBA", (canvas, canvas), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    if rounded:
+        draw.rounded_rectangle(
+            (0, 0, canvas - 1, canvas - 1),
+            radius=7 * unit,
+            fill=tokens["--ms-surface"],
+            outline=tokens["--ms-border-strong"],
+            width=max(1, round(unit)),
+        )
+    else:
+        draw.rectangle((0, 0, canvas, canvas), fill=tokens["--ms-surface"])
+
+    bx, by, bw, bh = MONOGRAM_BOX
+    font = ImageFont.truetype(str(bold), size=round(bh * unit * 1.4))
+    left, top, right, bottom = draw.textbbox((0, 0), MONOGRAM, font=font)
+    scale = min(bw * unit / (right - left), bh * unit / (bottom - top))
+    font = ImageFont.truetype(str(bold), size=max(1, round(font.size * scale)))
+    left, top, right, bottom = draw.textbbox((0, 0), MONOGRAM, font=font)
+    x = bx * unit + (bw * unit - (right - left)) / 2 - left
+    y = by * unit + (bh * unit - (bottom - top)) / 2 - top
+    draw.text((x, y), MONOGRAM, font=font, fill=tokens["--ms-text"])
+
+    x0, y0, w, h = (v * unit for v in BAR)
+    draw.rounded_rectangle((x0, y0, x0 + w, y0 + h), radius=unit, fill=tokens["--ms-accent"])
+    return image.resize((size, size), Image.Resampling.LANCZOS)
+
+
+def write_rasters(bold: Path, tokens: dict[str, RGBA]) -> None:
+    app_dir, public = WEB / "src" / "app", WEB / "public"
+    sizes = [16, 32, 48]
+    icons = [render_icon(s, bold, tokens, rounded=True) for s in sizes]
+    icons[-1].save(app_dir / "favicon.ico", sizes=[(s, s) for s in sizes], append_images=icons[:-1])
+    render_icon(180, bold, tokens, rounded=False).convert("RGB").save(app_dir / "apple-icon.png")
+    for size in (192, 512):
+        render_icon(size, bold, tokens, rounded=False).convert("RGB").save(public / f"icon-{size}.png")
+
+
+def write_og(fonts: dict[str, Path], mono: Path, tokens: dict[str, RGBA]) -> None:
+    width, height, margin = 1200, 630, 80
+    image = Image.new("RGBA", (width, height), tokens["--ms-bg"])
+
+    # Soft corner halo: allowed only on this off-site asset, to match the portfolio card.
+    halo = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    accent = tokens["--ms-accent"]
+    ImageDraw.Draw(halo).ellipse((760, -380, 1500, 360), fill=(*accent[:3], 30))
+    image = Image.alpha_composite(image, halo.filter(ImageFilter.GaussianBlur(140)))
+    draw = ImageDraw.Draw(image)
+
+    draw.rounded_rectangle((margin, margin, margin + 56, margin + 4), radius=2, fill=accent)
+    eyebrow = ImageFont.truetype(str(fonts["500"]), 26)
+    draw.text((margin, margin + 32), EYEBROW, font=eyebrow, fill=tokens["--ms-text-tertiary"])
+
+    title = ImageFont.truetype(str(fonts["700"]), 68)
+    y = margin + 92
+    for line in PRODUCT_LINES:
+        draw.text((margin, y), line, font=title, fill=tokens["--ms-text"])
+        y += 80
+    value = ImageFont.truetype(str(fonts["400"]), 30)
+    draw.text((margin, y + 18), VALUE_LINE, font=value, fill=tokens["--ms-text-secondary"])
+
+    chip_font = ImageFont.truetype(str(fonts["500"]), 24)
+    x, chip_y = margin, height - margin - 48
+    for label in STACK:
+        text_w = draw.textlength(label, font=chip_font)
+        draw.rounded_rectangle(
+            (x, chip_y, x + text_w + 32, chip_y + 48),
+            radius=6,
+            outline=tokens["--ms-border-control"],
+            width=2,
+        )
+        draw.text((x + 16, chip_y + 24), label, font=chip_font, fill=tokens["--ms-text"], anchor="lm")
+        x += text_w + 32 + 12
+
+    mono_font = ImageFont.truetype(str(mono), 24)
+    draw.text(
+        (width - margin, chip_y + 24),
+        DOMAIN,
+        font=mono_font,
+        fill=tokens["--ms-text-tertiary"],
+        anchor="rm",
+    )
+    image.convert("RGB").save(WEB / "public" / "og.png", optimize=True)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("--plex-dir", type=Path, required=True)
+    parser.add_argument("--mono-font", type=Path, required=True)
+    args = parser.parse_args()
+
+    tokens = read_tokens()
+    with tempfile.TemporaryDirectory() as tmp:
+        fonts = {
+            weight: to_ttf(args.plex_dir / f"ibm-plex-sans-latin-{weight}-normal.woff2", Path(tmp))
+            for weight in ("400", "500", "700")
+        }
+        path_d = monogram_path(fonts["700"], MONOGRAM_BOX)
+        write_svg_icon(path_d, tokens)
+        write_brand_mark_module(path_d)
+        write_rasters(fonts["700"], tokens)
+        write_og(fonts, args.mono_font, tokens)
+    print("brand assets written")
+
+
+if __name__ == "__main__":
+    main()
