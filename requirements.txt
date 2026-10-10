@@ -1,3 +1,0 @@
-opencv-python>=4.10.0
-mediapipe>=0.10.14; python_version < "3.13"
-pytest>=8.0.0

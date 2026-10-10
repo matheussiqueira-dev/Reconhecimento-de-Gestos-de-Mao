@@ -1,0 +1,6 @@
+# Tools for tests and static checks. The gesture rules are pure Python, so the
+# test suite does not need the runtime packages from requirements.txt.
+pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.17.0
+mypy==2.4.0
