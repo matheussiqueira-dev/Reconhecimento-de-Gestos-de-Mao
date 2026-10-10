@@ -94,7 +94,9 @@ def ascii_label(text: str) -> str:
     )
 
 
-def _xy(point: Landmark) -> tuple[float, float]:
+def _xy(point: Landmark | None) -> tuple[float, float]:
+    if point is None:
+        raise ValueError("Landmark coordinates must be finite numbers, got a missing landmark.")
     if isinstance(point, Mapping):
         x, y = float(point["x"]), float(point["y"])
     elif isinstance(point, Sequence):

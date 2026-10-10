@@ -46,6 +46,23 @@ def test_accepts_objects_and_mappings_like_mediapipe_landmarks() -> None:
     assert analyze_hand(as_objects, "Right") == analyze_hand(as_dicts, "Right")
 
 
+def test_rejects_an_empty_landmark_list() -> None:
+    with pytest.raises(ValueError, match="got 0"):
+        analyze_hand([], "Right")
+
+
+def test_rejects_a_missing_landmark() -> None:
+    landmarks: list[Any] = [[0.5, 0.5, 0.0] for _ in range(21)]
+    landmarks[3] = None
+    with pytest.raises(ValueError, match="missing landmark"):
+        analyze_hand(landmarks, "Right")
+
+
+def test_smoothers_pass_empty_input_through() -> None:
+    assert FingerStateSmoother().update(()) == ()
+    assert LabelSmoother().update("") == ""
+
+
 def test_rejects_incomplete_hands() -> None:
     with pytest.raises(ValueError, match="21 hand landmarks"):
         analyze_hand([[0.5, 0.5, 0.0]] * 20, "Right")
