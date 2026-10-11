@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import { SiteFooter } from "@/components/shell/SiteFooter";
 import { SiteHeader } from "@/components/shell/SiteHeader";
-import { AUTHOR, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
+import { AUTHOR, REPOSITORY_URL, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const plex = IBM_Plex_Sans({
@@ -50,6 +50,7 @@ const jsonLd = {
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Web",
   inLanguage: "pt-BR",
+  codeRepository: REPOSITORY_URL,
   author: {
     "@type": "Person",
     name: AUTHOR.name,
