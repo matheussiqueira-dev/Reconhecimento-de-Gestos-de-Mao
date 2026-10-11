@@ -2,6 +2,16 @@
   "name": "gestos-de-mao-web",
   "version": "1.1.0",
   "private": true,
+  "author": "Matheus Siqueira <hellomatheusdev@gmail.com> (https://www.matheussiqueira.dev)",
+  "homepage": "https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao.git",
+    "directory": "web"
+  },
+  "bugs": {
+    "url": "https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao/issues"
+  },
   "engines": {
     "node": "24.x"
   },
