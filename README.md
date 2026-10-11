@@ -2,6 +2,11 @@
 
 Demo de visão computacional que reconhece gestos de mão pela câmera, direto no navegador. O MediaPipe Hand Landmarker localiza 21 pontos de cada mão; regras explicáveis contam os dedos levantados e nomeiam 11 gestos; um painel mostra as métricas reais da sessão. O vídeo não sai do dispositivo.
 
+[![Case no portfólio](https://img.shields.io/badge/Case-Portf%C3%B3lio-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://www.matheussiqueira.dev/pt-BR/projects/hand-gesture-recognition-realtime)
+[![Código](https://img.shields.io/badge/C%C3%B3digo-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao)
+
+<sub>Design system compartilhado ms-tokens v1.0 · IBM Plex Sans · WCAG 2.2 AA</sub>
+
 O repositório tem duas implementações das mesmas regras:
 
 - **`web/`**: o site (Next.js 16, TypeScript, Tailwind CSS 4), publicado na Vercel;
@@ -9,15 +14,13 @@ O repositório tem duas implementações das mesmas regras:
 
 As duas passam pelos mesmos casos de teste sintéticos em `fixtures/gestures/`.
 
-**Demo:** https://reconhecimento-de-mao.vercel.app
-
 ![Página inicial em 1440 px](docs/screenshots/home-1440.png)
 
 ## Funcionalidades
 
 - Câmera ativada só depois do clique, com estados próprios para permissão negada, câmera ausente ou em uso, contexto inseguro e falha ao carregar o modelo.
 - Até duas mãos por quadro, com overlay dos 21 pontos, gesto, dedos levantados e a confiança do modelo na lateralidade.
-- Gestos: Punho fechado, Mão aberta, Paz, Rock, Polegar, Indicador, L, Três, Quatro, OK e Pinça (as regras estão em [Como funciona](https://reconhecimento-de-mao.vercel.app/about)).
+- Gestos: Punho fechado, Mão aberta, Paz, Rock, Polegar, Indicador, L, Três, Quatro, OK e Pinça (as regras estão em [`web/src/lib/gestures/analyze.ts`](web/src/lib/gestures/analyze.ts)).
 - Suavização por maioria em 5 quadros; sem mão no quadro, a tela mostra "Nenhuma mão detectada".
 - Painel da sessão com tempo de câmera, quadros processados, quadros por segundo, inferência média, distribuição de gestos e linha do tempo, cada gráfico com tabela alternativa.
 - Dark-only, IBM Plex Sans, tokens `ms-tokens.css` v1.0 compartilhados com o portfólio.
@@ -130,4 +133,13 @@ MIT. Veja [LICENSE](LICENSE). O modelo Hand Landmarker e o MediaPipe são Apache
 
 ---
 
-Desenvolvido por Matheus Siqueira · [www.matheussiqueira.dev](https://www.matheussiqueira.dev) · [LinkedIn](https://www.linkedin.com/in/matheussiqueira-dev) · [GitHub](https://github.com/matheussiqueira-dev)
+### Desenvolvido por Matheus Siqueira
+
+**Analista de Dados & BI | Power BI • SQL • Python • DAX | ETL, Modelagem de Dados, KPIs e Automação**
+
+Conecte-se e acesse meus projetos:
+
+[![Portfólio](https://img.shields.io/badge/Portf%C3%B3lio-matheussiqueira.dev-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://www.matheussiqueira.dev)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Matheus_Siqueira-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/matheussiqueira-dev)
+[![GitHub](https://img.shields.io/badge/GitHub-matheussiqueira--dev-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/matheussiqueira-dev)
+[![E-mail](https://img.shields.io/badge/E--mail-hellomatheusdev%40gmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:hellomatheusdev@gmail.com)
