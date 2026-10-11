@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "private": true,
   "author": "Matheus Siqueira <hellomatheusdev@gmail.com> (https://www.matheussiqueira.dev)",
-  "homepage": "https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao",
+  "homepage": "https://reconhecimento-de-mao.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao.git",
