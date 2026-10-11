@@ -39,8 +39,7 @@ htmlcov/
 # Tooling state
 .vercel/
 .cto-toolkit/
-.claude/settings.local.json
-.claude/launch.json
+.claude/
 
 # Logs
 *.log
