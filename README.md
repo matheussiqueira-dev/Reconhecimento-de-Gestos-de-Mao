@@ -2,6 +2,7 @@
 
 Demo de visão computacional que reconhece gestos de mão pela câmera, direto no navegador. O MediaPipe Hand Landmarker localiza 21 pontos de cada mão; regras explicáveis contam os dedos levantados e nomeiam 11 gestos; um painel mostra as métricas reais da sessão. O vídeo não sai do dispositivo.
 
+[![Demo ao vivo](https://img.shields.io/badge/Demo-ao_vivo-00f2fe?style=for-the-badge&logo=vercel&logoColor=000000)](https://reconhecimento-de-mao.vercel.app)
 [![Case no portfólio](https://img.shields.io/badge/Case-Portf%C3%B3lio-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://www.matheussiqueira.dev/pt-BR/projects/hand-gesture-recognition-realtime)
 [![Código](https://img.shields.io/badge/C%C3%B3digo-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao)
 
