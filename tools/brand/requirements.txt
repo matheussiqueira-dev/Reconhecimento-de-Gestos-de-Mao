@@ -1,0 +1,4 @@
+# Only for regenerating the brand assets (tools/brand/generate_assets.py).
+pillow==12.3.0
+fonttools==4.66.1
+brotli==1.2.0

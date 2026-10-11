@@ -1,0 +1,53 @@
+[project]
+name = "hand-gestures"
+version = "1.1.0"
+description = "Desktop reference implementation of the hand gesture rules (OpenCV + MediaPipe)."
+license = "MIT"
+authors = [{ name = "Matheus Siqueira", email = "hellomatheusdev@gmail.com" }]
+# mediapipe 0.10.21, the last release with the legacy `solutions` API, ships wheels up to 3.12.
+requires-python = ">=3.12,<3.13"
+# Runtime and development dependencies are pinned in requirements*.txt.
+
+[project.urls]
+Homepage = "https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao"
+Repository = "https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao"
+Portfolio = "https://www.matheussiqueira.dev/pt-BR/projects/hand-gesture-recognition-realtime"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-ra", "--strict-markers"]
+
+[tool.coverage.run]
+source = ["hand_gestures"]
+# These modules drive the camera and the window; they are exercised by `--self-check`
+# and by hand, not by unit tests.
+omit = ["hand_gestures/__main__.py", "hand_gestures/overlay.py", "hand_gestures/detector.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PL", "PT"]
+ignore = [
+  "PLC0415", # cv2/mediapipe are imported lazily so the rules test without the runtime stack
+  "PLR0912", # the frame loop and camera selection branch by design
+  "PLR0913",
+  "PLR0915",
+  "PLR2004", # landmark indices and pixel offsets are named where they matter
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["hand_gestures", "tests"]
+
+[[tool.mypy.overrides]]
+# Third-party runtime packages without type information (not installed in the dev env).
+module = ["cv2", "mediapipe", "numpy", "pygrabber.*"]
+ignore_missing_imports = true

@@ -1,10 +1,51 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+
+# MediaPipe WASM copied from node_modules at build time
+**/public/mediapipe/
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
 # Python
+.venv*/
+venv/
+env/
 __pycache__/
 *.py[cod]
 *$py.class
-.venv/
-venv/
-env/
+*.db
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Tooling state
+.vercel/
+.cto-toolkit/
+.claude/
 
 # Logs
 *.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
