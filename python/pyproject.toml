@@ -9,7 +9,7 @@ requires-python = ">=3.12,<3.13"
 # Runtime and development dependencies are pinned in requirements*.txt.
 
 [project.urls]
-Homepage = "https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao"
+Homepage = "https://reconhecimento-de-mao.vercel.app"
 Repository = "https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao"
 Portfolio = "https://www.matheussiqueira.dev/pt-BR/projects/hand-gesture-recognition-realtime"
 
