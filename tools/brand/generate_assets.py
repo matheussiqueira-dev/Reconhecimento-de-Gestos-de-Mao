@@ -81,7 +81,6 @@ def monogram_path(font_path: Path, box: tuple[float, float, float, float]) -> st
     font = TTFont(font_path)
     glyph_set = font.getGlyphSet()
     cmap = font.getBestCmap()
-    units_per_em = font["head"].unitsPerEm
 
     # Measure the run in font units.
     bounds = BoundsPen(glyph_set)
@@ -105,7 +104,6 @@ def monogram_path(font_path: Path, box: tuple[float, float, float, float]) -> st
         transform = (scale, 0, 0, -scale, offset_x + pen_x * scale, offset_y)
         glyph_set[name].draw(TransformPen(svg, transform))
         pen_x += glyph_set[name].width
-    del units_per_em
     return svg.getCommands()
 
 

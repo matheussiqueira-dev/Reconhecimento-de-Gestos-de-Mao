@@ -29,7 +29,8 @@ export function drawOverlay(
   canvas: HTMLCanvasElement,
   video: HTMLVideoElement,
   hands: readonly OverlayHand[],
-  options: { mirrored: boolean; visible: boolean; colors: OverlayColors },
+  /** displayWidth: the canvas width on screen in CSS px (kept by a ResizeObserver). */
+  options: { mirrored: boolean; visible: boolean; colors: OverlayColors; displayWidth: number },
 ): void {
   const width = video.videoWidth;
   const height = video.videoHeight;
@@ -44,7 +45,7 @@ export function drawOverlay(
   if (!options.visible) return;
 
   // Keep strokes at 2 CSS px (halo 4 px) whatever the display size of the stream.
-  const scale = width / Math.max(canvas.getBoundingClientRect().width, 1);
+  const scale = width / Math.max(options.displayWidth, 1);
   const lineWidth = 2 * scale;
   const haloWidth = 4 * scale;
   const radius = 2 * scale;

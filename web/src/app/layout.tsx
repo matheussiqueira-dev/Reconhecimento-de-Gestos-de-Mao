@@ -22,7 +22,6 @@ export const metadata: Metadata = {
   applicationName: SITE_TITLE,
   authors: [{ name: AUTHOR.name, url: AUTHOR.url }],
   creator: AUTHOR.name,
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "Matheus Siqueira",

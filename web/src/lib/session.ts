@@ -69,6 +69,13 @@ export class SessionStore {
     this.publish(now, true);
   }
 
+  /** The inference fell back from GPU to CPU while running. */
+  setDelegate(delegate: Delegate, now: number): void {
+    if (!this.running || this.delegate === delegate) return;
+    this.delegate = delegate;
+    this.publish(now, true);
+  }
+
   stop(now: number): void {
     if (!this.running) return;
     this.activeBeforeRunMs = this.activeMs(now);
@@ -97,10 +104,7 @@ export class SessionStore {
     this.inferenceTotalMs += Math.max(0, frame.inferenceMs);
     if (frame.gesture) {
       this.framesWithHand += 1;
-      this.gestureFrames = {
-        ...this.gestureFrames,
-        [frame.gesture]: (this.gestureFrames[frame.gesture] ?? 0) + 1,
-      };
+      this.gestureFrames[frame.gesture] = (this.gestureFrames[frame.gesture] ?? 0) + 1;
     }
 
     const second = Math.floor(this.activeMs(frame.now) / 1000);
@@ -131,7 +135,7 @@ export class SessionStore {
       framesWithHand: this.framesWithHand,
       averageInferenceMs: this.framesProcessed ? this.inferenceTotalMs / this.framesProcessed : null,
       averageFps: activeMs > 0 && this.framesProcessed ? this.framesProcessed / (activeMs / 1000) : null,
-      gestureFrames: this.gestureFrames,
+      gestureFrames: { ...this.gestureFrames },
       fpsTimeline: this.timeline.map((point) => ({ ...point })),
     };
     for (const listener of this.listeners) listener();

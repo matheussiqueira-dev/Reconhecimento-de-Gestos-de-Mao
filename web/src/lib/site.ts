@@ -1,3 +1,5 @@
+import packageJson from "../../package.json";
+
 export const PRODUCT_NAME = "Gestos de Mão";
 export const SITE_TITLE = "Reconhecimento de Gestos de Mão";
 export const SITE_DESCRIPTION =
@@ -28,5 +30,6 @@ export const SITE_URL = normalize(
   process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || PRODUCTION_URL,
 );
 
-export const APP_VERSION = "1.1.0";
+/** Server-only module: importing package.json here keeps it out of client bundles. */
+export const APP_VERSION = packageJson.version;
 export const COMMIT_SHA = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
