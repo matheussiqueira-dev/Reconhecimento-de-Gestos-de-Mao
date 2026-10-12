@@ -8,6 +8,8 @@ export type RawHandResult = {
 };
 
 export type HandReading = {
+  /** Stable per frame: the handedness, suffixed when MediaPipe gives two hands the same label. */
+  readonly key: string;
   readonly handedness: Handedness;
   /** The model's confidence in the handedness label (0..1). */
   readonly score: number;
@@ -25,7 +27,7 @@ export type HandReading = {
  */
 export class HandReadingTracker {
   private readonly smoothers = new Map<
-    Handedness,
+    string,
     { fingers: FingerStateSmoother; labels: LabelSmoother<GestureId> }
   >();
 
@@ -33,21 +35,28 @@ export class HandReadingTracker {
 
   read(result: RawHandResult): HandReading[] {
     const readings: HandReading[] = [];
+    const seen = new Map<Handedness, number>();
     result.landmarks.forEach((raw, index) => {
       const category = result.handedness[index]?.[0];
       const selfie = toSelfieFrame(raw, category?.categoryName ?? "Left");
       const analysis = analyzeHand(selfie.landmarks, selfie.handedness);
 
-      let smoother = this.smoothers.get(selfie.handedness);
+      // Both hands can carry the same label (crossed hands, two people): keep them apart.
+      const occurrence = (seen.get(selfie.handedness) ?? 0) + 1;
+      seen.set(selfie.handedness, occurrence);
+      const key = occurrence === 1 ? selfie.handedness : `${selfie.handedness}-${occurrence}`;
+
+      let smoother = this.smoothers.get(key);
       if (!smoother) {
         smoother = {
           fingers: new FingerStateSmoother(this.window),
           labels: new LabelSmoother<GestureId>(this.window),
         };
-        this.smoothers.set(selfie.handedness, smoother);
+        this.smoothers.set(key, smoother);
       }
       const fingerStates = smoother.fingers.update(analysis.fingerStates);
       readings.push({
+        key,
         handedness: selfie.handedness,
         score: category?.score ?? 0,
         gesture: smoother.labels.update(analysis.gesture),
@@ -58,9 +67,9 @@ export class HandReadingTracker {
       });
     });
 
-    const present = new Set(readings.map((reading) => reading.handedness));
-    for (const side of this.smoothers.keys()) {
-      if (!present.has(side)) this.smoothers.delete(side);
+    const present = new Set(readings.map((reading) => reading.key));
+    for (const key of this.smoothers.keys()) {
+      if (!present.has(key)) this.smoothers.delete(key);
     }
     return readings;
   }

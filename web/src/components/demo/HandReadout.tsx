@@ -11,18 +11,18 @@ const FINGERS = [
 
 export function HandReadout({ reading }: { reading: HandReading }) {
   const side = reading.handedness === "Right" ? "direita" : "esquerda";
-  const titleId = `hand-${reading.handedness}`;
+  const titleId = `hand-${reading.key}`;
   return (
     <section aria-labelledby={titleId} className="grid gap-3">
       <h3 id={titleId} className="text-h4 text-fg">
         Mão {side}
       </h3>
-      <p className="text-kpi text-fg" data-testid={`gesture-${reading.handedness}`}>
+      <p className="text-kpi text-fg" data-testid={`gesture-${reading.key}`}>
         {gestureLabel(reading.gesture)}
       </p>
       <p className="text-small text-fg-secondary">
         Dedos levantados:{" "}
-        <strong className="ms-num font-semibold text-fg" data-testid={`fingers-${reading.handedness}`}>
+        <strong className="ms-num font-semibold text-fg" data-testid={`fingers-${reading.key}`}>
           {reading.total}
         </strong>{" "}
         de 5

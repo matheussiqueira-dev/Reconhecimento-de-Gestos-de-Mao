@@ -88,6 +88,8 @@ export async function createHandTracker(options: {
   signal: AbortSignal;
   onStage: (stage: LoadStage) => void;
   onProgress: (ratio: number | null) => void;
+  /** Force the CPU delegate, e.g. after the GPU path failed during inference. */
+  delegate?: Delegate;
 }): Promise<HandTracker> {
   if (process.env.NEXT_PUBLIC_E2E_STUBS === "1" && window.__GESTOS_E2E__) {
     options.onStage("runtime");
@@ -114,7 +116,7 @@ export async function createHandTracker(options: {
         close: () => landmarker.close(),
       };
     };
-    if (hasWebGL2()) {
+    if (options.delegate !== "CPU" && hasWebGL2()) {
       try {
         return await create("GPU");
       } catch {

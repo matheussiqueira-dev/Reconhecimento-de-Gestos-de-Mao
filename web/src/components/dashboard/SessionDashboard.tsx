@@ -168,10 +168,10 @@ function GestureDistribution({ session }: { session: SessionSnapshot }) {
 }
 
 function FpsTimeline({ session }: { session: SessionSnapshot }) {
-  const points = session.fpsTimeline;
+  // The newest second is still being counted; plotting it would always show a dip.
+  const points = session.fpsTimeline.slice(0, -1);
   const maxFps = Math.max(30, ...points.map((point) => point.fps));
   const yMax = Math.ceil(maxFps / 10) * 10;
-  const average = points.length ? points.reduce((sum, point) => sum + point.fps, 0) / points.length : 0;
   const first = points[0]?.second ?? 0;
   const span = Math.max((points.at(-1)?.second ?? 0) - first, 1);
   const path = points
@@ -182,10 +182,12 @@ function FpsTimeline({ session }: { session: SessionSnapshot }) {
     <figure className="ms-card m-0 grid content-start gap-4" aria-labelledby="fps-title">
       <div className="grid gap-1">
         <h2 id="fps-title" className="text-h3">
-          {points.length ? `${formatDecimal(average)} quadros/s em média` : "Ainda sem quadros processados"}
+          {session.averageFps === null
+            ? "Ainda sem quadros processados"
+            : `${formatDecimal(session.averageFps)} quadros/s em média`}
         </h2>
         <figcaption className="text-caption text-fg-secondary">
-          Quadros processados em cada segundo de câmera ativa (últimos {TIMELINE_SECONDS} s).
+          Quadros processados em cada segundo completo de câmera ativa (últimos {TIMELINE_SECONDS} s).
         </figcaption>
       </div>
 
@@ -202,7 +204,7 @@ function FpsTimeline({ session }: { session: SessionSnapshot }) {
               preserveAspectRatio="none"
               className="h-40 w-full"
               role="img"
-              aria-label={`Quadros por segundo ao longo de ${points.length} segundos; média de ${formatDecimal(average)}.`}
+              aria-label={`Quadros por segundo ao longo de ${points.length} segundos; média de ${formatDecimal(session.averageFps ?? 0)}.`}
             >
               {[0, 50, 100].map((y) => (
                 <line

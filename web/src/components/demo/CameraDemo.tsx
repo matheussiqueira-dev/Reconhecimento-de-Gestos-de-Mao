@@ -67,6 +67,7 @@ export function CameraDemo() {
   const loopRef = useRef<() => void>(() => undefined);
   const timingRef = useRef({ lastFrameAt: 0, lastVideoTime: -1, fps: 0, latency: 0, lastUiAt: 0 });
   const announceRef = useRef({ at: 0, text: "" });
+  const displayWidthRef = useRef(0);
 
   const preferences = useSyncExternalStore(
     preferencesStore.subscribe,
@@ -144,6 +145,34 @@ export function CameraDemo() {
     [release],
   );
 
+  /** Some GPUs initialise the WebGL delegate and then fail on inference: retry once on the CPU. */
+  const switchToCpu = useCallback(async () => {
+    const generation = generationRef.current;
+    cancelFrame();
+    trackerRef.current?.close();
+    trackerRef.current = null;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    try {
+      const cpu = await createHandTracker({
+        signal: controller.signal,
+        onStage: () => undefined,
+        onProgress: () => undefined,
+        delegate: "CPU",
+      });
+      if (generation !== generationRef.current) {
+        cpu.close();
+        return;
+      }
+      trackerRef.current = cpu;
+      setDelegate("CPU");
+      sessionStore.setDelegate("CPU", performance.now());
+      scheduleFrame();
+    } catch {
+      if (generation === generationRef.current) fail(cameraProblem("model-init"));
+    }
+  }, [cancelFrame, fail, scheduleFrame]);
+
   useEffect(() => {
     loopRef.current = () => {
       const video = videoRef.current;
@@ -159,7 +188,8 @@ export function CameraDemo() {
         try {
           current = readingsRef.current.read(tracker.detectForVideo(video, startedAt));
         } catch {
-          fail(cameraProblem("model-init"));
+          if (tracker.delegate === "GPU") void switchToCpu();
+          else fail(cameraProblem("model-init"));
           return;
         }
         const inferenceMs = performance.now() - startedAt;
@@ -172,7 +202,12 @@ export function CameraDemo() {
             landmarks: reading.landmarks,
             highlight: reading.gesture !== "unknown",
           })),
-          { mirrored: prefs.mirror, visible: prefs.showLandmarks, colors: colorsRef.current ?? readOverlayColors() },
+          {
+            mirrored: prefs.mirror,
+            visible: prefs.showLandmarks,
+            colors: colorsRef.current ?? readOverlayColors(),
+            displayWidth: displayWidthRef.current || canvas.clientWidth,
+          },
         );
         sessionStore.recordFrame({ now: startedAt, inferenceMs, gesture: current[0]?.gesture ?? null });
 
@@ -197,7 +232,7 @@ export function CameraDemo() {
       }
       scheduleFrame();
     };
-  }, [fail, scheduleFrame]);
+  }, [fail, scheduleFrame, switchToCpu]);
 
   const start = useCallback(async () => {
     release();
@@ -227,7 +262,10 @@ export function CameraDemo() {
     streamRef.current = stream;
 
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) {
+      fail(cameraProblem("unknown"));
+      return;
+    }
     video.srcObject = stream;
     try {
       await video.play();
@@ -277,6 +315,17 @@ export function CameraDemo() {
     sessionStore.start(tracker.delegate, performance.now());
     scheduleFrame();
   }, [fail, release, scheduleFrame]);
+
+  // The overlay needs the canvas's on-screen width; observing it avoids a layout read per frame.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) displayWidthRef.current = entry.contentRect.width;
+    });
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, []);
 
   // Leaving the page must turn the camera off.
   useEffect(() => release, [release]);
@@ -383,7 +432,7 @@ export function CameraDemo() {
           </p>
         )}
         {isRunning &&
-          readings.map((reading) => <HandReadout key={reading.handedness} reading={reading} />)}
+          readings.map((reading) => <HandReadout key={reading.key} reading={reading} />)}
         <p className="text-caption text-fg-secondary">
           As métricas desta sessão ficam no{" "}
           <Link href="/dashboard" className="ms-link">
