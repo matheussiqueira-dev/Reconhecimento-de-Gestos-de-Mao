@@ -6,7 +6,7 @@ Demo de visão computacional que reconhece gestos de mão pela câmera, direto n
 [![Case no portfólio](https://img.shields.io/badge/Case-Portf%C3%B3lio-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://www.matheussiqueira.dev/pt-BR/projects/hand-gesture-recognition-realtime)
 [![Código](https://img.shields.io/badge/C%C3%B3digo-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/matheussiqueira-dev/Reconhecimento-de-Gestos-de-Mao)
 
-<sub>Design system compartilhado ms-tokens v1.0 · IBM Plex Sans · WCAG 2.2 AA</sub>
+<sub>Design system compartilhado ms-tokens v1.0 · IBM Plex Sans · acessibilidade verificada com axe (WCAG 2.2 A/AA), sem violações</sub>
 
 O repositório tem duas implementações das mesmas regras:
 
