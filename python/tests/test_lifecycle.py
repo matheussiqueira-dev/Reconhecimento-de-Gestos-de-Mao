@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from hand_gestures import app
+from hand_gestures.detector import DetectorUnavailableError
 
 
 @pytest.fixture
@@ -68,4 +69,20 @@ def test_missing_runtime_has_actionable_exit(
 ) -> None:
     monkeypatch.setattr(app, "run", MagicMock(side_effect=ImportError("cv2")))
     assert app.main([]) == 1
-    assert "requirements.txt" in capsys.readouterr().out
+    output = capsys.readouterr()
+    assert "requirements.txt" in output.out
+    assert "ImportError: cv2" in output.err
+
+
+def test_runtime_failure_reports_its_root_cause(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    missing = OSError("libEGL.so.1: cannot open shared object file")
+    failure = DetectorUnavailableError("Could not initialise MediaPipe Tasks.")
+    failure.__cause__ = missing
+    monkeypatch.setattr(app, "self_check", MagicMock(side_effect=failure))
+
+    assert app.main(["--self-check"]) == 1
+    err = capsys.readouterr().err
+    assert "DetectorUnavailableError: Could not initialise MediaPipe Tasks." in err
+    assert "OSError: libEGL.so.1: cannot open shared object file" in err

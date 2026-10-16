@@ -6,6 +6,7 @@ Run from python/:  python -m hand_gestures [--help]
 from __future__ import annotations
 
 import argparse
+import sys
 from collections.abc import Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -290,15 +291,27 @@ def _run(config: AppConfig, resources: ExitStack) -> int:
     return exit_code
 
 
+def describe_failure(exc: BaseException, depth: int = 4) -> str:
+    """One line with the exception and its causes, e.g. a missing shared library."""
+    parts: list[str] = []
+    current: BaseException | None = exc
+    while current is not None and len(parts) < depth:
+        parts.append(f"{type(current).__name__}: {current}")
+        current = current.__cause__
+    return " <- ".join(parts)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     config = parse_args(argv)
     try:
         if config.self_check:
             return self_check(config)
         return run(config)
-    except (DetectorUnavailableError, ImportError):
+    except (DetectorUnavailableError, ImportError) as exc:
         print(
             "Runtime ou modelo indisponivel. Instale requirements.txt "
             "e execute python -m hand_gestures.model."
         )
+        # The cause (e.g. a missing libEGL.so.1 on Linux) is what the user needs to act on.
+        print(f"Detalhe: {describe_failure(exc)}", file=sys.stderr)
         return 1
