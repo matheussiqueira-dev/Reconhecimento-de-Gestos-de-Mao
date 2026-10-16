@@ -4,7 +4,7 @@ version = "1.1.0"
 description = "Desktop reference implementation of the hand gesture rules (OpenCV + MediaPipe)."
 license = "MIT"
 authors = [{ name = "Matheus Siqueira", email = "hellomatheusdev@gmail.com" }]
-# mediapipe 0.10.21, the last release with the legacy `solutions` API, ships wheels up to 3.12.
+# Python 3.12 is the validated runtime in local checks and CI.
 requires-python = ">=3.12,<3.13"
 # Runtime and development dependencies are pinned in requirements*.txt.
 
@@ -20,9 +20,8 @@ addopts = ["-ra", "--strict-markers"]
 
 [tool.coverage.run]
 source = ["hand_gestures"]
-# These modules drive the camera and the window; they are exercised by `--self-check`
-# and by hand, not by unit tests.
-omit = ["hand_gestures/__main__.py", "hand_gestures/overlay.py", "hand_gestures/detector.py"]
+# The window drawing still requires a manual camera check.
+omit = ["hand_gestures/__main__.py", "hand_gestures/overlay.py"]
 
 [tool.coverage.report]
 show_missing = true

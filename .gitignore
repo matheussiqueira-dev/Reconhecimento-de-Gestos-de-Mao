@@ -35,6 +35,7 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+python/models/
 
 # Tooling state
 .vercel/
