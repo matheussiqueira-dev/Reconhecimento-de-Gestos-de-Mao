@@ -20,7 +20,7 @@ Não há analytics, Speed Insights, cookies, cadastro nem identificação de pes
 
 ## App desktop (Python)
 
-Processa os quadros localmente e não faz requisições de rede durante o uso. A instalação baixa pacotes do PyPI.
+Processa os quadros localmente e não faz requisições de rede durante a inferência. A instalação baixa pacotes do PyPI. A preparação explícita (`python -m hand_gestures.model`) baixa o modelo oficial do Google Cloud Storage, verifica tamanho e SHA-256 e o mantém em `python/models/`. Essa requisição expõe os dados usuais de conexão, como IP; não envia quadros da câmera. Depois da preparação, o detector usa o arquivo local.
 
 ## Limites de uso
 

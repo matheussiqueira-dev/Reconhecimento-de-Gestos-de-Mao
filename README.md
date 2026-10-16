@@ -11,7 +11,7 @@ Demo de visão computacional que reconhece gestos de mão pela câmera, direto n
 O repositório tem duas implementações das mesmas regras:
 
 - **`web/`**: o site (Next.js 16, TypeScript, Tailwind CSS 4), publicado na Vercel;
-- **`python/`**: o app desktop original (Python 3.12, OpenCV, MediaPipe), com HUD e seleção de câmera.
+- **`python/`**: o app desktop original (Python 3.12, OpenCV, MediaPipe Tasks), com HUD e seleção de câmera.
 
 As duas passam pelos mesmos casos de teste sintéticos em `fixtures/gestures/`.
 
@@ -67,18 +67,21 @@ O e2e usa o Microsoft Edge instalado (`PLAYWRIGHT_CHANNEL=msedge`, padrão local
 
 ## Rodar a versão Python
 
-Requer Python 3.12 (o `mediapipe` 0.10.21, última versão com a API `mp.solutions`, não tem wheel para 3.13).
+Requer Python 3.12, versão validada localmente e no CI. O adaptador usa MediaPipe Tasks 0.10.35; as regras geométricas permanecem compartilhadas com a web.
 
 ```bash
 cd python
 python -m venv .venv
 .venv/Scripts/activate        # Windows; no Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
+python -m hand_gestures.model               # baixa e verifica o modelo oficial uma vez
 python -m hand_gestures --help
 python -m hand_gestures                      # primeira câmera que funcionar
 python -m hand_gestures --camera-name "Brio" # por nome (Windows, requer pip install pygrabber==0.2)
 python -m hand_gestures --self-check         # testa o MediaPipe sem câmera
 ```
+
+O modelo fica em `python/models/` (ignorado pelo Git), usa a mesma URL versionada da web e é verificado por tamanho e SHA-256 antes da inicialização. A inferência não baixa arquivos automaticamente.
 
 Teclas na janela: `q` sai, `l` liga/desliga os pontos, `h` liga/desliga o HUD.
 
@@ -127,6 +130,12 @@ Detalhes em [docs/PRIVACY.md](docs/PRIVACY.md). Segurança (CSP, headers, depend
 - Um punho com a ponta do polegar encostada na do indicador pode ser lido como Pinça.
 - O e2e verifica a interface com poses sintéticas e o carregamento do modelo real com uma câmera sintética; o reconhecimento com uma mão de verdade é verificado manualmente.
 - Não serve para identificação, autenticação nem uso clínico.
+
+## Evolução e manutenção
+
+- [Visão técnica do projeto](PROJECT_OVERVIEW.md).
+- [Roadmap, ferramentas e validação](ROADMAP_AND_SKILLS.md).
+- [Plano executivo e guias de evolução](MASTER_EVOLUTION_PLAN.md).
 
 ## Licença
 
