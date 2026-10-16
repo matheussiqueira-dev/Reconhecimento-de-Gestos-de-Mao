@@ -1,5 +1,5 @@
 import { expect, test, type ConsoleMessage } from "@playwright/test";
-import { installStubs, pose, showPose, stubState } from "./stubs";
+import { installStubs, pose, releasePendingTracker, showPose, stubState } from "./stubs";
 
 function collectConsoleErrors(page: import("@playwright/test").Page) {
   const errors: string[] = [];
@@ -11,6 +11,43 @@ function collectConsoleErrors(page: import("@playwright/test").Page) {
 }
 
 test.describe("camera demo with golden fixtures", () => {
+  test("leaving during model initialisation closes a late tracker and every camera track", async ({ page }) => {
+    await installStubs(page, { deferTracker: true });
+    await page.goto("/demo");
+    await page.getByRole("button", { name: "Ativar câmera" }).click();
+    await expect.poll(async () => (await stubState(page)).created).toBe(1);
+    await page.getByRole("link", { name: "Como funciona", exact: true }).first().click();
+    await expect(page).toHaveURL(/\/about$/);
+    await releasePendingTracker(page);
+    await expect.poll(async () => (await stubState(page)).closed).toBe(1);
+    expect((await stubState(page)).liveTracks).toBe(0);
+  });
+
+  test("a GPU inference failure falls back once to CPU and keeps the camera running", async ({ page }) => {
+    await installStubs(page, { failGpu: true });
+    await page.goto("/demo");
+    await page.getByRole("button", { name: "Ativar câmera" }).click();
+    await expect.poll(async () => (await stubState(page)).created).toBe(2);
+    await expect(page.getByTestId("camera-status")).toHaveText("Reconhecimento ativo.");
+    await showPose(page, pose("peace-right"));
+    await expect(page.getByTestId("gesture-Right")).toHaveText("Paz");
+    expect((await stubState(page)).closed).toBe(1);
+    await page.getByRole("button", { name: "Parar câmera" }).click();
+    expect((await stubState(page)).closed).toBe(2);
+    expect((await stubState(page)).liveTracks).toBe(0);
+  });
+
+  test("a CPU inference failure releases resources and offers recovery", async ({ page }) => {
+    await installStubs(page, { failCpu: true });
+    await page.goto("/demo");
+    await page.getByRole("button", { name: "Ativar câmera" }).click();
+    await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeVisible();
+    const state = await stubState(page);
+    expect(state.created).toBe(1);
+    expect(state.closed).toBe(1);
+    expect(state.liveTracks).toBe(0);
+  });
+
   test("shows the gesture and finger count for each fixture, and no gesture without a hand", async ({
     page,
   }) => {

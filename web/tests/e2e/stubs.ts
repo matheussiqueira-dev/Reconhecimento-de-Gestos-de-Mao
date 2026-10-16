@@ -28,9 +28,12 @@ export function pose(id: string): PoseCase {
  * raw (unmirrored) frame, exactly as MediaPipe would, so the app's selfie conversion
  * is exercised too.
  */
-export async function installStubs(page: Page, options: { deny?: boolean; realModel?: boolean } = {}) {
+export async function installStubs(
+  page: Page,
+  options: { deny?: boolean; realModel?: boolean; deferTracker?: boolean; failGpu?: boolean; failCpu?: boolean } = {},
+) {
   await page.addInitScript(
-    ({ deny, realModel }) => {
+    ({ deny, realModel, deferTracker, failGpu, failCpu }) => {
       type Fixture = { handedness: string; landmarks: [number, number, number][] };
       const state = {
         current: null as Fixture | null,
@@ -38,6 +41,7 @@ export async function installStubs(page: Page, options: { deny?: boolean; realMo
         closed: 0,
         liveTracks: 0,
         deny,
+        releaseTracker: null as (() => void) | null,
       };
       Object.assign(window, { __E2E_STATE__: state });
 
@@ -74,9 +78,16 @@ export async function installStubs(page: Page, options: { deny?: boolean; realMo
         __GESTOS_E2E__: {
           createTracker: async () => {
             state.created += 1;
+            const delegate = failGpu && state.created === 1 ? "GPU" : "CPU";
+            if (deferTracker) {
+              await new Promise<void>((resolve) => { state.releaseTracker = resolve; });
+            }
             return {
-              delegate: "CPU",
+              delegate,
               detectForVideo: () => {
+                if ((delegate === "GPU" && failGpu) || (delegate === "CPU" && failCpu)) {
+                  throw new Error("Synthetic inference failure");
+                }
                 const fixture = state.current;
                 if (!fixture) return { landmarks: [], handedness: [] };
                 return {
@@ -94,8 +105,21 @@ export async function installStubs(page: Page, options: { deny?: boolean; realMo
         },
       });
     },
-    { deny: options.deny ?? false, realModel: options.realModel ?? false },
+    {
+      deny: options.deny ?? false,
+      realModel: options.realModel ?? false,
+      deferTracker: options.deferTracker ?? false,
+      failGpu: options.failGpu ?? false,
+      failCpu: options.failCpu ?? false,
+    },
   );
+}
+
+export async function releasePendingTracker(page: Page) {
+  await page.evaluate(() => {
+    (window as unknown as { __E2E_STATE__: { releaseTracker: (() => void) | null } })
+      .__E2E_STATE__.releaseTracker?.();
+  });
 }
 
 export async function showPose(page: Page, fixture: PoseCase | null) {
