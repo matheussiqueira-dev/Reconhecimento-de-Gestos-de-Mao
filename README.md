@@ -81,6 +81,8 @@ python -m hand_gestures --camera-name "Brio" # por nome (Windows, requer pip ins
 python -m hand_gestures --self-check         # testa o MediaPipe sem câmera
 ```
 
+No Linux, o OpenCV e o runtime do MediaPipe Tasks precisam de bibliotecas gráficas do sistema; no Ubuntu/Debian: `sudo apt-get install libgl1 libegl1 libgles2 libglib2.0-0`. Se algo faltar, o `--self-check` mostra a causa (por exemplo, `libEGL.so.1`).
+
 O modelo fica em `python/models/` (ignorado pelo Git), usa a mesma URL versionada da web e é verificado por tamanho e SHA-256 antes da inicialização. A inferência não baixa arquivos automaticamente.
 
 Teclas na janela: `q` sai, `l` liga/desliga os pontos, `h` liga/desliga o HUD.
