@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { SessionDashboard } from "@/components/dashboard/SessionDashboard";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/dashboard",
   title: "Painel da sessão",
   description:
     "Métricas reais da sua sessão na demo: tempo de câmera, quadros processados, quadros por segundo, inferência e gestos.",
-  alternates: { canonical: "/dashboard" },
-};
+});
 
 export default function DashboardPage() {
   return (

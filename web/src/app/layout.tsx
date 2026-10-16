@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import { SiteFooter } from "@/components/shell/SiteFooter";
 import { SiteHeader } from "@/components/shell/SiteHeader";
+import { SHARED_SOCIAL } from "@/lib/metadata";
 import { AUTHOR, REPOSITORY_URL, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -22,21 +23,8 @@ export const metadata: Metadata = {
   applicationName: SITE_TITLE,
   authors: [{ name: AUTHOR.name, url: AUTHOR.url }],
   creator: AUTHOR.name,
-  openGraph: {
-    type: "website",
-    siteName: "Matheus Siqueira",
-    locale: "pt_BR",
-    url: "/",
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: `${SITE_TITLE}: demo no navegador` }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    images: [{ url: "/og.png", alt: `${SITE_TITLE}: demo no navegador` }],
-  },
+  // No og:url here: routes without their own metadata (404, errors) must not claim the home URL.
+  ...SHARED_SOCIAL,
   robots: { index: true, follow: true },
 };
 
@@ -49,7 +37,12 @@ const jsonLd = {
   applicationCategory: "DeveloperApplication",
   operatingSystem: "Web",
   inLanguage: "pt-BR",
-  codeRepository: REPOSITORY_URL,
+  // codeRepository belongs to SoftwareSourceCode, not WebApplication.
+  isBasedOn: {
+    "@type": "SoftwareSourceCode",
+    codeRepository: REPOSITORY_URL,
+    programmingLanguage: ["TypeScript", "Python"],
+  },
   author: {
     "@type": "Person",
     name: AUTHOR.name,

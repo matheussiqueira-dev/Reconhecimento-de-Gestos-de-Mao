@@ -4,14 +4,15 @@ import { PrivacyNotice } from "@/components/PrivacyNotice";
 import { formatDecimal, formatRatio } from "@/lib/format";
 import { PINCH_DISTANCE_THRESHOLD } from "@/lib/gestures";
 import { LANDMARKER_OPTIONS, MEDIAPIPE_VERSION } from "@/lib/mediapipe/config";
+import { pageMetadata } from "@/lib/metadata";
 import { REPOSITORY_URL } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/about",
   title: "Como funciona",
   description:
     "Arquitetura, regras dos gestos, suavização, lateralidade, limitações e privacidade da demo de reconhecimento de gestos de mão.",
-  alternates: { canonical: "/about" },
-};
+});
 
 export default function AboutPage() {
   return (
