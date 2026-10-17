@@ -98,9 +98,10 @@ export default function AboutPage() {
           <a href={REPOSITORY_URL} className="ms-link" target="_blank" rel="noopener noreferrer">
             repositório<span className="ms-sr-only"> (abre em nova aba)</span>
           </a>{" "}
-          tem o app desktop original (OpenCV + MediaPipe 0.10.21, Python 3.12): HUD com até duas mãos, medidor de
-          pinça, seleção de câmera por nome e atalhos de teclado. Ele não faz parte do site. Os mesmos casos de
-          teste sintéticos verificam as regras em Python e em TypeScript.
+          tem o app desktop original (OpenCV + MediaPipe Tasks {MEDIAPIPE_VERSION}, Python 3.12): HUD com até duas
+          mãos, medidor de pinça, seleção de câmera por nome e atalhos de teclado. Ele usa o mesmo modelo Hand
+          Landmarker deste site e não faz parte do deploy. Os mesmos casos de teste sintéticos verificam as regras em
+          Python e em TypeScript.
         </p>
       </section>
 

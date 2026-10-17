@@ -74,7 +74,11 @@ jobs:
           python-version-file: python/.python-version
           cache: pip
           cache-dependency-path: python/requirements.txt
-      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libegl1 libgles2 libglib2.0-0
       - run: pip install -r requirements.txt
-      # Initialises MediaPipe Hands on a blank frame: proves the pinned runtime works without a camera.
+      - run: pip check
+      - run: pip install pip-audit==2.10.1
+      - run: pip-audit -r requirements.txt --strict
+      - run: python -m hand_gestures.model
+      # Initialises Tasks on a blank frame without opening a camera.
       - run: python -m hand_gestures --self-check

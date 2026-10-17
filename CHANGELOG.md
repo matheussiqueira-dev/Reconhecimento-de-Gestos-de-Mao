@@ -2,6 +2,25 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Alterado
+
+- Adaptador Python migra de `mp.solutions` 0.10.21 para MediaPipe Tasks 0.10.35, sem dependências Protobuf e JAX; regras e fixtures preservadas.
+- Modelo desktop preparado explicitamente, validado por tamanho/SHA-256 e gravado atomicamente.
+- Next.js e ESLint Config 16.4.2; Playwright 1.64.1 e Vitest 5.0.5, sem migrações major diretas.
+
+### Corrigido
+
+- Captura e detector liberados também em falhas de seleção, aquecimento, configuração, janela e inferência.
+- Timestamps estritamente crescentes no adaptador de vídeo; fechamento idempotente do detector.
+
+### Adicionado
+
+- Testes do adaptador Tasks, integridade do modelo e ciclo de vida desktop; regressões e2e para inicialização tardia, fallback GPU/CPU e falha na CPU.
+- `pip check`, auditoria de dependências e download verificado do modelo no CI do runtime Python.
+- Documentos de visão técnica, roadmap e plano executivo de evolução.
+
 ## [1.1.0] - 2026-10-10
 
 Consolida a `main`, o PR #1 (versão web) e o histórico órfão do `master`. Veja [ADR 0001](docs/adr/0001-consolidate-the-lineages.md).

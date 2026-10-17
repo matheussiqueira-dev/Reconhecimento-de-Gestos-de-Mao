@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import platform
 from collections.abc import Iterable
+from contextlib import ExitStack
 from dataclasses import dataclass
 from typing import Any
 
@@ -60,14 +61,15 @@ def _try_open_camera(index: int, backend: int | None, warmup: int = 2) -> Any | 
     """Open a camera index and read a few frames; None if it does not deliver frames."""
     cv2 = _cv2()
     cap = cv2.VideoCapture(index) if backend is None else cv2.VideoCapture(index, backend)
-    if not cap.isOpened():
-        cap.release()
-        return None
-    for _ in range(max(1, warmup)):
-        ok, _frame = cap.read()
-        if not ok:
-            cap.release()
+    with ExitStack() as resources:
+        resources.callback(cap.release)
+        if not cap.isOpened():
             return None
+        for _ in range(max(1, warmup)):
+            ok, _frame = cap.read()
+            if not ok:
+                return None
+        resources.pop_all()  # Ownership transfers to the caller only after warmup succeeds.
     return cap
 
 
@@ -87,7 +89,10 @@ def open_camera_by_index(
 ) -> Any | None:
     cap = _try_open_camera(index, backend)
     if cap is not None:
-        _configure_camera(cap, width, height, fps)
+        with ExitStack() as resources:
+            resources.callback(cap.release)
+            _configure_camera(cap, width, height, fps)
+            resources.pop_all()
     return cap
 
 

@@ -31,10 +31,13 @@ O MediaPipe rotula direita/esquerda supondo imagem espelhada. O app Python espel
 
 - `gestures.py`: regras e suavização (mesmo contrato da web);
 - `camera.py`: backend DirectShow no Windows, busca por nome (pygrabber opcional), sondagem de índices;
-- `detector.py`: MediaPipe Hands legado (`mp.solutions`), até 2 mãos, com score de lateralidade;
+- `detector.py`: MediaPipe Tasks Hand Landmarker 0.10.35, modo VIDEO, timestamps estritamente crescentes, até 2 mãos, com score de lateralidade;
+- `model.py`: download explícito do modelo float16 v1, limite de tamanho, SHA-256 e escrita atômica; nenhum download no loop de inferência;
 - `metrics.py`: FPS e estatísticas medidas;
 - `overlay.py`: HUD em OpenCV com as cores dos tokens em BGR;
 - `app.py`: CLI, loop e teclas.
+
+`ExitStack` controla o detector, a captura e a janela, inclusive quando a seleção da câmera ou a criação da janela falha. A descoberta e a configuração de câmera só transferem a propriedade da captura após sucesso.
 
 OpenCV e MediaPipe são importados sob demanda, então os testes rodam só com `requirements-dev.txt`.
 

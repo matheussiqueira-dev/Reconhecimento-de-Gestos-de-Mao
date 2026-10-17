@@ -6,7 +6,9 @@ Run from python/:  python -m hand_gestures [--help]
 from __future__ import annotations
 
 import argparse
+import sys
 from collections.abc import Sequence
+from contextlib import ExitStack
 from dataclasses import dataclass
 from typing import Any
 
@@ -178,11 +180,24 @@ def self_check(config: AppConfig) -> int:
     frame = np.zeros((config.height, config.width, 3), dtype=np.uint8)
     with HandDetector(config.max_hands, config.min_detection_confidence) as detector:
         hands = detector.detect(frame)
-    print(f"mediapipe {mp.__version__}: Hands OK, {len(hands)} mao(s) num quadro vazio.")
+    print(f"mediapipe {mp.__version__}: Hand Landmarker OK, {len(hands)} mao(s) num quadro vazio.")
     return 0
 
 
 def run(config: AppConfig) -> int:
+    import cv2
+
+    try:
+        with ExitStack() as resources:
+            return _run(config, resources)
+    except (OSError, RuntimeError, ValueError, cv2.error):
+        print(
+            "Falha no processamento ou encerramento da camera; verifique o dispositivo e o modelo."
+        )
+        return 1
+
+
+def _run(config: AppConfig, resources: ExitStack) -> int:
     import cv2
 
     backend = default_backend()
@@ -198,12 +213,14 @@ def run(config: AppConfig) -> int:
         print(exc)
         return 1
 
+    resources.callback(detector.close)
     cap, camera_label = select_camera(config, backend)
     if cap is None:
-        detector.close()
         return 1
+    resources.callback(cap.release)
 
     if not config.headless:
+        resources.callback(cv2.destroyAllWindows)
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
 
     metrics = GestureMetrics()
@@ -212,78 +229,89 @@ def run(config: AppConfig) -> int:
     exit_code = 0
     print("Sistema iniciado. Pressione 'q' na janela do video para sair.")
 
-    try:
-        while True:
-            ok, frame = cap.read()
-            if not ok:
-                print("A camera parou de enviar quadros. Verifique a conexao.")
-                exit_code = 1
-                break
-            if config.mirror:
-                frame = cv2.flip(frame, 1)
+    while True:
+        ok, frame = cap.read()
+        if not ok:
+            print("A camera parou de enviar quadros. Verifique a conexao.")
+            exit_code = 1
+            break
+        if config.mirror:
+            frame = cv2.flip(frame, 1)
 
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            rgb.flags.writeable = False
-            detected = detector.detect(rgb)
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgb.flags.writeable = False
+        detected = detector.detect(rgb)
 
-            views: list[HandView] = []
-            for hand in detected:
-                analysis = analyze_hand(hand.landmarks, hand.handedness)
-                key = hand.handedness.lower()
-                fingers = finger_smoothers.setdefault(
-                    key, FingerStateSmoother(config.smoothing_window)
+        views: list[HandView] = []
+        for hand in detected:
+            analysis = analyze_hand(hand.landmarks, hand.handedness)
+            key = hand.handedness.lower()
+            fingers = finger_smoothers.setdefault(key, FingerStateSmoother(config.smoothing_window))
+            labels = label_smoothers.setdefault(key, LabelSmoother(config.smoothing_window))
+            states = fingers.update(analysis.finger_states)
+            gesture = labels.update(analysis.gesture)
+            views.append(
+                HandView(
+                    side="Direita" if key.startswith("r") else "Esquerda",
+                    score=hand.score,
+                    gesture=gesture_label(gesture),
+                    total=sum(states),
+                    states=states,
+                    pinch_strength=analysis.pinch_strength,
                 )
-                labels = label_smoothers.setdefault(key, LabelSmoother(config.smoothing_window))
-                states = fingers.update(analysis.finger_states)
-                gesture = labels.update(analysis.gesture)
-                views.append(
-                    HandView(
-                        side="Direita" if key.startswith("r") else "Esquerda",
-                        score=hand.score,
-                        gesture=gesture_label(gesture),
-                        total=sum(states),
-                        states=states,
-                        pinch_strength=analysis.pinch_strength,
-                    )
-                )
-                if config.draw_landmarks:
-                    draw_landmarks(frame, hand.landmarks, highlight=gesture != "unknown")
-                if config.debug:
-                    pinch = analysis.pinch_distance
-                    print(f"[{hand.handedness}] dedos={states} gesto={gesture} pinch={pinch:.2f}")
+            )
+            if config.draw_landmarks:
+                draw_landmarks(frame, hand.landmarks, highlight=gesture != "unknown")
+            if config.debug:
+                pinch = analysis.pinch_distance
+                print(f"[{hand.handedness}] dedos={states} gesto={gesture} pinch={pinch:.2f}")
 
-            # A hand that left the frame must not carry its old votes into the next detection.
-            present = {hand.handedness.lower() for hand in detected}
-            for stale in finger_smoothers.keys() - present:
-                del finger_smoothers[stale], label_smoothers[stale]
+        # A hand that left the frame must not carry its old votes into the next detection.
+        present = {hand.handedness.lower() for hand in detected}
+        for stale in finger_smoothers.keys() - present:
+            del finger_smoothers[stale], label_smoothers[stale]
 
-            first = views[0] if views else None
-            snapshot = metrics.update(first.gesture if first else None, first.total if first else 0)
-            if config.show_ui:
-                draw_hud(frame, camera_label, snapshot.fps, views)
+        first = views[0] if views else None
+        snapshot = metrics.update(first.gesture if first else None, first.total if first else 0)
+        if config.show_ui:
+            draw_hud(frame, camera_label, snapshot.fps, views)
 
-            if not config.headless:
-                cv2.imshow(WINDOW_NAME, frame)
-                key_code = cv2.waitKey(1) & 0xFF
-                if key_code == ord("q"):
-                    break
-                if key_code == ord("l"):
-                    config.draw_landmarks = not config.draw_landmarks
-                if key_code == ord("h"):
-                    config.show_ui = not config.show_ui
-
-            if config.max_frames and metrics.frames >= config.max_frames:
-                break
-    finally:
-        detector.close()
-        cap.release()
         if not config.headless:
-            cv2.destroyAllWindows()
+            cv2.imshow(WINDOW_NAME, frame)
+            key_code = cv2.waitKey(1) & 0xFF
+            if key_code == ord("q"):
+                break
+            if key_code == ord("l"):
+                config.draw_landmarks = not config.draw_landmarks
+            if key_code == ord("h"):
+                config.show_ui = not config.show_ui
+
+        if config.max_frames and metrics.frames >= config.max_frames:
+            break
     return exit_code
+
+
+def describe_failure(exc: BaseException, depth: int = 4) -> str:
+    """One line with the exception and its causes, e.g. a missing shared library."""
+    parts: list[str] = []
+    current: BaseException | None = exc
+    while current is not None and len(parts) < depth:
+        parts.append(f"{type(current).__name__}: {current}")
+        current = current.__cause__
+    return " <- ".join(parts)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     config = parse_args(argv)
-    if config.self_check:
-        return self_check(config)
-    return run(config)
+    try:
+        if config.self_check:
+            return self_check(config)
+        return run(config)
+    except (DetectorUnavailableError, ImportError) as exc:
+        print(
+            "Runtime ou modelo indisponivel. Instale requirements.txt "
+            "e execute python -m hand_gestures.model."
+        )
+        # The cause (e.g. a missing libEGL.so.1 on Linux) is what the user needs to act on.
+        print(f"Detalhe: {describe_failure(exc)}", file=sys.stderr)
+        return 1
