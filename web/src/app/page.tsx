@@ -3,11 +3,10 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { GestureCatalog } from "@/components/GestureCatalog";
 import { PrivacyNotice } from "@/components/PrivacyNotice";
+import { pageMetadata } from "@/lib/metadata";
 import { REPOSITORY_URL } from "@/lib/site";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "/" },
-};
+export const metadata: Metadata = pageMetadata({ path: "/" });
 
 const STEPS = [
   {

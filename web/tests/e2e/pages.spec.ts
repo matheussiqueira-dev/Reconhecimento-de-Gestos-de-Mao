@@ -92,10 +92,31 @@ test("SEO files and metadata are served from the app", async ({ page, request })
     const response = await request.get(path);
     expect(response.status(), path).toBe(200);
   }
-  await page.goto("/");
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /^https:\/\/.+\/og\.png$/);
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /^https:\/\//);
-  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+  for (const route of ROUTES) {
+    await page.goto(route);
+    const canonical = await page.locator('link[rel="canonical"]').getAttribute("href");
+    expect(canonical, route).toMatch(/^https:\/\//);
+    expect(new URL(canonical ?? "").pathname, route).toBe(route);
+    // og:url must name the same page as the canonical, not the home page.
+    await expect(page.locator('meta[property="og:url"]'), route).toHaveAttribute("content", canonical ?? "");
+    await expect(page.locator('meta[property="og:image"]'), route).toHaveAttribute(
+      "content",
+      /^https:\/\/.+\/og\.png$/,
+    );
+    await expect(page.locator('meta[name="twitter:card"]'), route).toHaveAttribute(
+      "content",
+      "summary_large_image",
+    );
+    const ogTitle = await page.locator('meta[property="og:title"]').getAttribute("content");
+    const title = await page.title();
+    expect(title.startsWith(ogTitle ?? "#"), `${route}: "${title}" vs og:title "${ogTitle}"`).toBe(true);
+  }
+
+  // Pages without their own metadata (404) must not claim another URL.
+  const missing = await page.goto("/pagina-que-nao-existe");
+  expect(missing?.status()).toBe(404);
+  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+  await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
 });
 
 test("security headers are set and X-Powered-By is not", async ({ request }) => {

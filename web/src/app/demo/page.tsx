@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { CameraDemo } from "@/components/demo/CameraDemo";
 import { PrivacyNotice } from "@/components/PrivacyNotice";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/demo",
   title: "Demo",
   description:
     "Ative a câmera e veja o MediaPipe localizar sua mão e as regras nomearem o gesto em tempo real, sem enviar o vídeo.",
-  alternates: { canonical: "/demo" },
-};
+});
 
 const TIPS = [
   "Mostre a palma de frente para a câmera, a cerca de meio metro.",
